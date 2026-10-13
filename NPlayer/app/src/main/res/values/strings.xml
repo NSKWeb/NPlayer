@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">N Player</string>
+
+    <string name="nav_home">Home</string>
+    <string name="nav_search">Search</string>
+    <string name="nav_downloads">Downloads</string>
+    <string name="nav_settings">Settings</string>
+
+    <string name="server_url_hint">Server URL (https://…)</string>
+    <string name="username_hint">Username</string>
+    <string name="password_hint">Password</string>
+    <string name="sign_in">Sign in</string>
+    <string name="sign_out">Sign out</string>
+    <string name="unlock_app">Unlock N Player</string>
+    <string name="biometric_title">Biometric lock</string>
+    <string name="biometric_subtitle">Require biometric unlock to open the app</string>
+
+    <string name="error_generic">Something went wrong</string>
+    <string name="error_offline">No network connection</string>
+    <string name="retry">Retry</string>
+    <string name="loading">Loading…</string>
+</resources>
