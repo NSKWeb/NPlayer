@@ -1,15 +1,9 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 660" width="320" height="660" role="img" aria-labelledby="t d">
   <title id="t">N Player settings screen</title>
-  <desc id="d">Settings screen: account details, a biometric lock switch, and a sign out button.</desc>
+  <desc id="d">Settings screen: account details, an Appearance section with a segmented Light, Dark and System theme control, a biometric lock switch, and a sign out button.</desc>
   <defs>
     <clipPath id="scr"><rect x="16" y="16" width="288" height="628" rx="28"/></clipPath>
-    <linearGradient id="p1" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#3E5C86"/><stop offset="100%" stop-color="#1B2740"/></linearGradient>
-    <linearGradient id="p2" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#5A3E6E"/><stop offset="100%" stop-color="#241B33"/></linearGradient>
-    <linearGradient id="p3" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2F6B63"/><stop offset="100%" stop-color="#152E2B"/></linearGradient>
-    <linearGradient id="p4" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#7A4A32"/><stop offset="100%" stop-color="#2C1D15"/></linearGradient>
     <linearGradient id="back" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#31507C"/><stop offset="60%" stop-color="#1A2740"/><stop offset="100%" stop-color="#0C0D12"/></linearGradient>
-    <linearGradient id="still" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#22334F"/><stop offset="50%" stop-color="#141B2A"/><stop offset="100%" stop-color="#0A0C11"/></linearGradient>
-    
   </defs>
 
   <rect width="320" height="660" fill="#08080B"/>
@@ -24,22 +18,47 @@
       <rect x="262" y="32" width="16" height="10" rx="3" fill="none" stroke="#8B98AE" stroke-width="1.4"/>
       <rect x="264" y="34" width="10" height="6" rx="1.5"/>
     </g>
+
     <text x="28" y="88" font-family="ui-sans-serif, system-ui, sans-serif" font-size="14" font-weight="700" fill="#E8ECF3">Account</text>
     <text x="28" y="114" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11.5" fill="#E8ECF3">Signed in as alex</text>
     <text x="28" y="132" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10" fill="#8B98AE">https://media.example.com</text>
     <line x1="28" y1="156" x2="292" y2="156" stroke="#2E3646" stroke-width="1"/>
-    <text x="28" y="192" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#E8ECF3">Biometric lock</text>
-    <text x="28" y="210" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10" fill="#8B98AE">Require unlock to open the app</text>
-    <rect x="244" y="186" width="48" height="26" rx="13" fill="#9ECAFF"/>
-    <circle cx="280" cy="199" r="10" fill="#0B0B0F"/>
-    <line x1="28" y1="244" x2="292" y2="244" stroke="#2E3646" stroke-width="1"/>
-    <text x="28" y="280" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#E8ECF3">Server</text>
-    <text x="28" y="298" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10" fill="#8B98AE">Jellyfin 10.9.11  •  connected</text>
-    <line x1="28" y1="332" x2="292" y2="332" stroke="#2E3646" stroke-width="1"/>
-    <text x="28" y="368" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#E8ECF3">Playback</text>
-    <text x="28" y="386" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10" fill="#8B98AE">Prefer direct play when possible</text>
-    <rect x="28" y="416" width="132" height="44" rx="22" fill="none" stroke="#4A5568" stroke-width="1.5"/>
-    <text x="94" y="443" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="600" fill="#E8ECF3">Sign out</text>
+
+    <text x="28" y="190" font-family="ui-sans-serif, system-ui, sans-serif" font-size="14" font-weight="700" fill="#E8ECF3">Appearance</text>
+    <text x="28" y="216" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#E8ECF3">Theme</text>
+    <text x="28" y="234" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10" fill="#8B98AE">Choose light, dark, or follow the system setting</text>
+    <rect x="28" y="248" width="264" height="40" rx="20" fill="none" stroke="#3A4557" stroke-width="1.2"/>
+    <line x1="116" y1="254" x2="116" y2="282" stroke="#3A4557" stroke-width="1"/>
+    <line x1="204" y1="254" x2="204" y2="282" stroke="#3A4557" stroke-width="1"/>
+    <rect x="32" y="252" width="80" height="32" rx="16" fill="#9ECAFF"/>
+    <g fill="#8B98AE">
+      <circle cx="62" cy="264" r="4.4" fill="none" stroke="#8B98AE" stroke-width="1.6"/>
+      <line x1="62" y1="262.6" x2="62" y2="258" stroke="#8B98AE" stroke-width="1.6" stroke-linecap="round"/>
+      <line x1="62" y1="265.4" x2="62" y2="270" stroke="#8B98AE" stroke-width="1.6" stroke-linecap="round"/>
+      <line x1="60.6" y1="264" x2="56" y2="264" stroke="#8B98AE" stroke-width="1.6" stroke-linecap="round"/>
+      <line x1="63.4" y1="264" x2="68" y2="264" stroke="#8B98AE" stroke-width="1.6" stroke-linecap="round"/>
+    </g>
+    <text x="90" y="273" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10.5" font-weight="600" fill="#0B0B0F">System</text>
+    <circle cx="150" cy="264" r="4.4" fill="none" stroke="#8B98AE" stroke-width="1.6"/>
+    <g stroke="#8B98AE" stroke-width="1.6" stroke-linecap="round">
+      <line x1="150" y1="256.4" x2="150" y2="254.6"/>
+      <line x1="150" y1="273.4" x2="150" y2="271.6"/>
+      <line x1="142.4" y1="264" x2="140.6" y2="264"/>
+      <line x1="159.4" y1="264" x2="157.6" y2="264"/>
+    </g>
+    <text x="178" y="273" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10.5" font-weight="600" fill="#8B98AE">Light</text>
+    <path d="M247.6,258 A7,7 0 1 0 247.6,270 A5.6,5.6 0 1 1 247.6,258 Z" fill="#8B98AE"/>
+    <text x="266" y="273" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10.5" font-weight="600" fill="#8B98AE">Dark</text>
+    <line x1="28" y1="308" x2="292" y2="308" stroke="#2E3646" stroke-width="1"/>
+
+    <text x="28" y="344" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" fill="#E8ECF3">Biometric lock</text>
+    <text x="28" y="362" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10" fill="#8B98AE">Require unlock to open the app</text>
+    <rect x="244" y="338" width="48" height="26" rx="13" fill="#9ECAFF"/>
+    <circle cx="280" cy="351" r="10" fill="#0B0B0F"/>
+
+    <rect x="28" y="410" width="132" height="44" rx="22" fill="none" stroke="#4A5568" stroke-width="1.5"/>
+    <text x="94" y="437" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12" font-weight="600" fill="#E8ECF3">Sign out</text>
+
     <rect x="16" y="560" width="288" height="84" fill="#121218"/>
     <line x1="16" y1="560" x2="304" y2="560" stroke="#20232C" stroke-width="1"/>
     <path d="M43.0,593 L43.0,584 L52.0,576 L61.0,584 L61.0,593 Z" fill="#4A5568"/>

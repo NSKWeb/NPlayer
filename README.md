@@ -28,7 +28,7 @@ across your devices. It ships no content and talks only to the server URL you en
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="docs/features-dark.svg">
   <source media="(prefers-color-scheme: light)" srcset="docs/features-light.svg">
-  <img src="docs/features-dark.svg" alt="Six feature cards: direct play first, offline downloads, resume anywhere, biometric lock, fast library search, and dynamic colour." width="900">
+  <img src="docs/features-dark.svg" alt="Six feature cards: direct play first, offline downloads, resume anywhere, biometric lock, fast library search, and a light, dark or system theme toggle." width="900">
 </picture>
 
 </div>
@@ -65,7 +65,7 @@ release build.
 
 <img src="docs/screen-player.svg" alt="Player screen with video surface and transport controls" width="230">
 <img src="docs/screen-downloads.svg" alt="Downloads screen listing items with progress bars" width="230">
-<img src="docs/screen-settings.svg" alt="Settings screen with account info and biometric lock toggle" width="230">
+<img src="docs/screen-settings.svg" alt="Settings screen with account info, an Appearance section holding a segmented Light, Dark and System theme control, a biometric lock toggle, and sign out" width="230">
 
 </div>
 
@@ -271,8 +271,20 @@ background black so there is no white flash between the splash and first frame.
 
 On Android 12 and above, **dynamic colour is on by default** and the app inherits the
 user's wallpaper palette. The fixed palette is the fallback for older devices, and
-Material 3 derives the remaining roles from either source. That means the app looks
-native to the device without a theme picker.
+Material 3 derives the remaining roles from either source.
+
+**Light, dark, or system** is a real choice, not a device-only default. Settings exposes
+a segmented control that writes a `ThemeMode` to DataStore:
+
+| Mode | Behaviour |
+|---|---|
+| **System** (default) | Follows the device setting. Existing installs are unaffected. |
+| **Light** | Always the light scheme, regardless of the device. |
+| **Dark** | Always the dark scheme. |
+
+`MainActivity` reads the stored mode *before* `NPlayerTheme` is applied, so the choice
+survives process death and there is no light-to-dark flash on launch. `windowBackground`
+resolves through a DayNight colour resource for the same reason.
 
 ### Layout and components
 
