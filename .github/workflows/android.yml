@@ -18,9 +18,14 @@ jobs:
   build:
     name: Build and test
     runs-on: ubuntu-latest
+
     defaults:
       run:
         working-directory: NPlayer
+
+    env:
+      ANDROID_HOME: /usr/local/lib/android/sdk
+      ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
 
     steps:
       - name: Checkout
@@ -31,9 +36,6 @@ jobs:
         with:
           distribution: temurin
           java-version: '21'
-
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
 
       - name: Set up Gradle
         uses: gradle/actions/setup-gradle@v4
