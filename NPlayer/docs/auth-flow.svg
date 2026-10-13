@@ -1,109 +1,95 @@
+<?xml version='1.0' encoding='utf-8'?>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 940 560" width="940" height="560" role="img" aria-labelledby="title desc" font-family="ui-sans-serif, system-ui, 'Segoe UI', Roboto, sans-serif">
   <title id="title">Authentication flow</title>
   <desc id="desc">Flow diagram of sign-in: the app checks the stored session, and if unauthenticated shows the auth screen, normalises the server URL, calls AuthenticateByName, and stores the returned access token. No API key is required.</desc>
 
   <defs>
     <linearGradient id="bg3" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0%" stop-color="#0B0B0F"/>
-      <stop offset="100%" stop-color="#121218"/>
+      <stop offset="0%" stop-color="#0B0B0F" />
+      <stop offset="100%" stop-color="#121218" />
     </linearGradient>
     <marker id="ar3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-      <path d="M 0 0 L 10 5 L 0 10 z" fill="#7C8BA3"/>
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#7C8BA3" />
     </marker>
-    <style>
-      .node { fill:#1C1C24; stroke:#2E3646; stroke-width:1.5; rx:10; }
-      .node-net { fill:#152218; stroke:#2E5B3A; stroke-width:1.5; rx:10; }
-      .node-store { fill:#171d29; stroke:#33405A; stroke-width:1.5; rx:10; }
-      .n { fill:#E8ECF3; font-size:12.5px; font-weight:600; }
-      .s { fill:#93A0B5; font-size:10.5px; }
-      .t { fill:#6E7A90; font-size:9.5px; }
-      .f { stroke:#7C8BA3; stroke-width:1.7; fill:none; marker-end:url(#ar3); }
-      .f-dash { stroke:#5C6A80; stroke-width:1.4; fill:none; stroke-dasharray:5 4; marker-end:url(#ar3); }
-      .flabel { fill:#9AA7BC; font-size:10.5px; }
-      .yes { fill:#4ADE80; font-size:10.5px; font-weight:700; }
-      .no { fill:#F0A868; font-size:10.5px; font-weight:700; }
-      .diamond { fill:#1A2230; stroke:#3B4A63; stroke-width:1.5; }
-      .hdr { fill:#9ECAFF; font-size:15px; font-weight:700; }
-    </style>
-  </defs>
+    </defs>
 
-  <rect width="940" height="560" fill="url(#bg3)"/>
+  <rect width="940" height="560" fill="url(#bg3)" />
   <text x="36" y="44" fill="#F2F5FA" font-size="21" font-weight="700">Authentication — no API key required</text>
-  <text x="36" y="65" class="t">Jellyfin issues the access token at sign-in. The user only supplies a server URL and their account.</text>
+  <text x="36" y="65" fill="#6E7A90" font-size="9.5px">Jellyfin issues the access token at sign-in. The user only supplies a server URL and their account.</text>
 
-  <!-- 1 launch -->
-  <rect x="40" y="96" width="200" height="62" class="node"/>
-  <text x="54" y="120" class="n">App launch</text>
-  <text x="54" y="138" class="s">MainActivity → BiometricGate</text>
-  <text x="54" y="152" class="t">gate optional, off by default</text>
+  
+  <rect x="40" y="96" width="200" height="62" fill="#1C1C24" stroke="#2E3646" stroke-width="1.5" rx="10" />
+  <text x="54" y="120" fill="#E8ECF3" font-size="12.5px" font-weight="600">App launch</text>
+  <text x="54" y="138" fill="#93A0B5" font-size="10.5px">MainActivity → BiometricGate</text>
+  <text x="54" y="152" fill="#6E7A90" font-size="9.5px">gate optional, off by default</text>
 
-  <line x1="240" y1="127" x2="292" y2="127" class="f"/>
+  <line x1="240" y1="127" x2="292" y2="127" stroke="#7C8BA3" stroke-width="1.7" fill="none" marker-end="url(#ar3)" />
 
-  <!-- 2 session check -->
-  <rect x="292" y="96" width="216" height="62" class="node-store"/>
-  <text x="306" y="120" class="n">SessionStore.session</text>
-  <text x="306" y="138" class="s">DataStore Flow: url + token</text>
-  <text x="306" y="152" class="t">authed = url &amp;&amp; token &amp;&amp; userId</text>
+  
+  <rect x="292" y="96" width="216" height="62" fill="#171d29" stroke="#33405A" stroke-width="1.5" rx="10" />
+  <text x="306" y="120" fill="#E8ECF3" font-size="12.5px" font-weight="600">SessionStore.session</text>
+  <text x="306" y="138" fill="#93A0B5" font-size="10.5px">DataStore Flow: url + token</text>
+  <text x="306" y="152" fill="#6E7A90" font-size="9.5px">authed = url &amp;&amp; token &amp;&amp; userId</text>
 
-  <line x1="508" y1="127" x2="556" y2="127" class="f"/>
+  <line x1="508" y1="127" x2="556" y2="127" stroke="#7C8BA3" stroke-width="1.7" fill="none" marker-end="url(#ar3)" />
 
-  <!-- 3 diamond -->
-  <polygon points="616,90 676,127 616,164 556,127" class="diamond"/>
-  <text x="600" y="124" class="s">authed?</text>
-  <text x="600" y="139" class="s">?</text>
+  
+  <polygon points="616,90 676,127 616,164 556,127" fill="#1A2230" stroke="#3B4A63" stroke-width="1.5" />
+  <text x="600" y="124" fill="#93A0B5" font-size="10.5px">authed?</text>
+  <text x="600" y="139" fill="#93A0B5" font-size="10.5px">?</text>
 
-  <!-- yes -> home -->
-  <line x1="676" y1="127" x2="760" y2="127" class="f"/>
-  <text x="690" y="119" class="yes">yes</text>
-  <rect x="760" y="96" width="140" height="62" class="node"/>
-  <text x="774" y="120" class="n">HomeScreen</text>
-  <text x="774" y="138" class="s">browse libraries</text>
+  
+  <line x1="676" y1="127" x2="760" y2="127" stroke="#7C8BA3" stroke-width="1.7" fill="none" marker-end="url(#ar3)" />
+  <text x="690" y="119" fill="#4ADE80" font-size="10.5px" font-weight="700">yes</text>
+  <rect x="760" y="96" width="140" height="62" fill="#1C1C24" stroke="#2E3646" stroke-width="1.5" rx="10" />
+  <text x="774" y="120" fill="#E8ECF3" font-size="12.5px" font-weight="600">HomeScreen</text>
+  <text x="774" y="138" fill="#93A0B5" font-size="10.5px">browse libraries</text>
 
-  <!-- no -> auth -->
-  <line x1="616" y1="164" x2="616" y2="212" class="f"/>
-  <text x="624" y="186" class="no">no</text>
-  <rect x="490" y="212" width="252" height="70" class="node"/>
-  <text x="504" y="236" class="n">AuthScreen</text>
-  <text x="504" y="254" class="s">server URL · username · password</text>
-  <text x="504" y="270" class="t">normalizeUrl() adds https:// if absent</text>
+  
+  <line x1="616" y1="164" x2="616" y2="212" stroke="#7C8BA3" stroke-width="1.7" fill="none" marker-end="url(#ar3)" />
+  <text x="624" y="186" fill="#F0A868" font-size="10.5px" font-weight="700">no</text>
+  <rect x="490" y="212" width="252" height="70" fill="#1C1C24" stroke="#2E3646" stroke-width="1.5" rx="10" />
+  <text x="504" y="236" fill="#E8ECF3" font-size="12.5px" font-weight="600">AuthScreen</text>
+  <text x="504" y="254" fill="#93A0B5" font-size="10.5px">server URL · username · password</text>
+  <text x="504" y="270" fill="#6E7A90" font-size="9.5px">normalizeUrl() adds https:// if absent</text>
 
-  <line x1="616" y1="282" x2="616" y2="330" class="f"/>
+  <line x1="616" y1="282" x2="616" y2="330" stroke="#7C8BA3" stroke-width="1.7" fill="none" marker-end="url(#ar3)" />
 
-  <!-- 4 login -->
-  <rect x="470" y="330" width="292" height="86" class="node-net"/>
-  <text x="484" y="354" class="n">AuthRepository.login()</text>
-  <text x="484" y="372" class="s">1. saveServerUrlForProbe(url)</text>
-  <text x="484" y="388" class="s">2. POST Users/AuthenticateByName</text>
-  <text x="484" y="404" class="t">X-Emby-Authorization: Client, Device</text>
+  
+  <rect x="470" y="330" width="292" height="86" fill="#152218" stroke="#2E5B3A" stroke-width="1.5" rx="10" />
+  <text x="484" y="354" fill="#E8ECF3" font-size="12.5px" font-weight="600">AuthRepository.login()</text>
+  <text x="484" y="372" fill="#93A0B5" font-size="10.5px">1. saveServerUrlForProbe(url)</text>
+  <text x="484" y="388" fill="#93A0B5" font-size="10.5px">2. POST Users/AuthenticateByName</text>
+  <text x="484" y="404" fill="#6E7A90" font-size="9.5px">X-Emby-Authorization: Client, Device</text>
 
-  <line x1="762" y1="373" x2="822" y2="373" class="f"/>
-  <rect x="822" y="344" width="94" height="58" class="node-net"/>
-  <text x="834" y="368" class="n">Jellyfin</text>
-  <text x="834" y="385" class="s">verifies</text>
+  <line x1="762" y1="373" x2="822" y2="373" stroke="#7C8BA3" stroke-width="1.7" fill="none" marker-end="url(#ar3)" />
+  <rect x="822" y="344" width="94" height="58" fill="#152218" stroke="#2E5B3A" stroke-width="1.5" rx="10" />
+  <text x="834" y="368" fill="#E8ECF3" font-size="12.5px" font-weight="600">Jellyfin</text>
+  <text x="834" y="385" fill="#93A0B5" font-size="10.5px">verifies</text>
 
-  <line x1="822" y1="410" x2="762" y2="410" class="f-dash"/>
-  <text x="782" y="404" class="flabel">AccessToken</text>
-  <text x="782" y="428" class="flabel">+ User.Id</text>
+  <line x1="822" y1="410" x2="762" y2="410" stroke="#5C6A80" stroke-width="1.4" fill="none" stroke-dasharray="5 4" marker-end="url(#ar3)" />
+  <text x="782" y="404" fill="#9AA7BC" font-size="10.5px">AccessToken</text>
+  <text x="782" y="428" fill="#9AA7BC" font-size="10.5px">+ User.Id</text>
 
-  <!-- 5 persist -->
-  <line x1="616" y1="416" x2="616" y2="452" class="f"/>
-  <rect x="446" y="452" width="340" height="72" class="node-store"/>
-  <text x="460" y="476" class="n">SessionStore.saveLogin()</text>
-  <text x="460" y="494" class="s">token · userId · userName → DataStore</text>
-  <text x="460" y="511" class="t">every later request sends the token automatically</text>
+  
+  <line x1="616" y1="416" x2="616" y2="452" stroke="#7C8BA3" stroke-width="1.7" fill="none" marker-end="url(#ar3)" />
+  <rect x="446" y="452" width="340" height="72" fill="#171d29" stroke="#33405A" stroke-width="1.5" rx="10" />
+  <text x="460" y="476" fill="#E8ECF3" font-size="12.5px" font-weight="600">SessionStore.saveLogin()</text>
+  <text x="460" y="494" fill="#93A0B5" font-size="10.5px">token · userId · userName → DataStore</text>
+  <text x="460" y="511" fill="#6E7A90" font-size="9.5px">every later request sends the token automatically</text>
 
-  <!-- device id note -->
-  <rect x="40" y="212" width="400" height="150" class="node"/>
-  <text x="56" y="238" class="hdr">Device identity</text>
-  <text x="56" y="262" class="s">DeviceIdProvider derives a stable id from</text>
-  <text x="56" y="279" class="s">Settings.Secure.ANDROID_ID, prefixed "nplayer-".</text>
-  <text x="56" y="300" class="t">This is the platform's own per-app id, resettable by</text>
-  <text x="56" y="315" class="t">the user. It is not a spoofed or randomised hardware</text>
-  <text x="56" y="330" class="t">fingerprint. Jellyfin uses it so a user can revoke a</text>
-  <text x="56" y="345" class="t">single device from their own server dashboard.</text>
+  
+  <rect x="40" y="212" width="400" height="150" fill="#1C1C24" stroke="#2E3646" stroke-width="1.5" rx="10" />
+  <text x="56" y="238" fill="#9ECAFF" font-size="15px" font-weight="700">Device identity</text>
+  <text x="56" y="262" fill="#93A0B5" font-size="10.5px">DeviceIdProvider derives a stable id from</text>
+  <text x="56" y="279" fill="#93A0B5" font-size="10.5px">Settings.Secure.ANDROID_ID, prefixed "nplayer-".</text>
+  <text x="56" y="300" fill="#6E7A90" font-size="9.5px">This is the platform's own per-app id, resettable by</text>
+  <text x="56" y="315" fill="#6E7A90" font-size="9.5px">the user. It is not a spoofed or randomised hardware</text>
+  <text x="56" y="330" fill="#6E7A90" font-size="9.5px">fingerprint. Jellyfin uses it so a user can revoke a</text>
+  <text x="56" y="345" fill="#6E7A90" font-size="9.5px">single device from their own server dashboard.</text>
 
-  <!-- retry note -->
-  <path d="M 490 250 C 420 250, 400 300, 470 352" class="f-dash"/>
-  <text x="330" y="300" class="flabel">failure →</text>
-  <text x="330" y="316" class="flabel">inline error</text>
+  
+  <path d="M 490 250 C 420 250, 400 300, 470 352" stroke="#5C6A80" stroke-width="1.4" fill="none" stroke-dasharray="5 4" marker-end="url(#ar3)" />
+  <text x="330" y="300" fill="#9AA7BC" font-size="10.5px">failure →</text>
+  <text x="330" y="316" fill="#9AA7BC" font-size="10.5px">inline error</text>
 </svg>
