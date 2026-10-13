@@ -1,0 +1,55 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 660" width="320" height="660" role="img" aria-labelledby="t d">
+  <title id="t">N Player search screen</title>
+  <desc id="d">Search screen: a search field labelled Search your library above a poster grid of results.</desc>
+  <defs>
+    <clipPath id="scr"><rect x="16" y="16" width="288" height="628" rx="28"/></clipPath>
+    <linearGradient id="p1" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#3E5C86"/><stop offset="100%" stop-color="#1B2740"/></linearGradient>
+    <linearGradient id="p2" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#5A3E6E"/><stop offset="100%" stop-color="#241B33"/></linearGradient>
+    <linearGradient id="p3" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2F6B63"/><stop offset="100%" stop-color="#152E2B"/></linearGradient>
+    <linearGradient id="p4" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#7A4A32"/><stop offset="100%" stop-color="#2C1D15"/></linearGradient>
+    <linearGradient id="back" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#31507C"/><stop offset="60%" stop-color="#1A2740"/><stop offset="100%" stop-color="#0C0D12"/></linearGradient>
+    <linearGradient id="still" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#22334F"/><stop offset="50%" stop-color="#141B2A"/><stop offset="100%" stop-color="#0A0C11"/></linearGradient>
+    
+  </defs>
+
+  <rect width="320" height="660" fill="#08080B"/>
+  <rect x="6" y="6" width="308" height="648" rx="34" fill="#15161E" stroke="#2C3546" stroke-width="2"/>
+  <rect x="16" y="16" width="288" height="628" rx="28" fill="#0C0D12"/>
+  <g clip-path="url(#scr)">
+    <text x="34" y="42" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10.5" font-weight="600" fill="#8B98AE">9:41</text>
+    <g fill="#8B98AE">
+      <rect x="242" y="35" width="3" height="8" rx="1"/>
+      <rect x="248" y="32" width="3" height="11" rx="1"/>
+      <rect x="254" y="29" width="3" height="14" rx="1"/>
+      <rect x="262" y="32" width="16" height="10" rx="3" fill="none" stroke="#8B98AE" stroke-width="1.4"/>
+      <rect x="264" y="34" width="10" height="6" rx="1.5"/>
+    </g>
+    <rect x="28" y="74" width="264" height="46" rx="10" fill="none" stroke="#4A5568" stroke-width="1.5"/>
+    <text x="36" y="68" font-family="ui-sans-serif, system-ui, sans-serif" font-size="9.5" fill="#9ECAFF">Search your library</text>
+    <text x="42" y="103" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12.5" fill="#E8ECF3">dune</text>
+    <line x1="42" y1="110" x2="66" y2="110" stroke="#9ECAFF" stroke-width="1.4"/>
+    <text x="28" y="88" font-family="ui-sans-serif, system-ui, sans-serif" font-size="14" font-weight="700" fill="#E8ECF3"></text>
+    <rect x="28" y="104" width="112" height="168" rx="10" fill="url(#p1)"/>
+    <text x="28" y="288" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10.5" font-weight="600" fill="#E8ECF3">Dune: Part Two</text>
+    <text x="28" y="301" font-family="ui-sans-serif, system-ui, sans-serif" font-size="9" fill="#8B98AE">2024</text>
+    <rect x="150" y="104" width="112" height="168" rx="10" fill="url(#p2)"/>
+    <text x="150" y="288" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10.5" font-weight="600" fill="#E8ECF3">Dune</text>
+    <text x="150" y="301" font-family="ui-sans-serif, system-ui, sans-serif" font-size="9" fill="#8B98AE">2021</text>
+    <rect x="28" y="322" width="112" height="168" rx="10" fill="url(#p4)"/>
+    <text x="28" y="506" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10.5" font-weight="600" fill="#E8ECF3">Dune: Prophecy</text>
+    <text x="28" y="519" font-family="ui-sans-serif, system-ui, sans-serif" font-size="9" fill="#8B98AE">2024</text>
+    <rect x="150" y="322" width="112" height="168" rx="10" fill="url(#p3)"/>
+    <text x="150" y="506" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10.5" font-weight="600" fill="#E8ECF3">Dune (1984)</text>
+    <text x="150" y="519" font-family="ui-sans-serif, system-ui, sans-serif" font-size="9" fill="#8B98AE">1984</text>
+    <rect x="16" y="560" width="288" height="84" fill="#121218"/>
+    <line x1="16" y1="560" x2="304" y2="560" stroke="#20232C" stroke-width="1"/>
+    <path d="M43.0,593 L43.0,584 L52.0,576 L61.0,584 L61.0,593 Z" fill="#4A5568"/>
+    <text x="52.0" y="610" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10" font-weight="600" fill="#4A5568">Home</text>
+    <circle cx="123.0" cy="584" r="6.5" fill="none" stroke="#9ECAFF" stroke-width="2"/><line x1="127.6" y1="588.4" x2="132.0" y2="593" stroke="#9ECAFF" stroke-width="2" stroke-linecap="round"/>
+    <text x="124.0" y="610" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10" font-weight="600" fill="#9ECAFF">Search</text>
+    <line x1="196.0" y1="577" x2="196.0" y2="587" stroke="#4A5568" stroke-width="2" stroke-linecap="round"/><path d="M192.0,584 L196.0,588.5 L200.0,584 Z" fill="#4A5568"/><line x1="188.0" y1="593" x2="204.0" y2="593" stroke="#4A5568" stroke-width="2" stroke-linecap="round"/>
+    <text x="196.0" y="610" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10" font-weight="600" fill="#4A5568">Downloads</text>
+    <circle cx="268.0" cy="586" r="6.2" fill="none" stroke="#4A5568" stroke-width="2.2"/><circle cx="268.0" cy="586" r="2" fill="#4A5568"/><line x1="268.0" y1="580.4" x2="268.0" y2="577" stroke="#4A5568" stroke-width="2.2" stroke-linecap="round"/><line x1="268.0" y1="591.6" x2="268.0" y2="595" stroke="#4A5568" stroke-width="2.2" stroke-linecap="round"/><line x1="262.4" y1="586.0" x2="259.0" y2="586" stroke="#4A5568" stroke-width="2.2" stroke-linecap="round"/><line x1="273.6" y1="586.0" x2="277.0" y2="586" stroke="#4A5568" stroke-width="2.2" stroke-linecap="round"/>
+    <text x="268.0" y="610" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10" font-weight="600" fill="#4A5568">Settings</text>
+  </g>
+</svg>

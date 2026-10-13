@@ -1,13 +1,14 @@
 <div align="center">
 
-# N Player
+<img src="docs/hero.svg" alt="N Player — your media, your server, your rules. A native Android client for the Jellyfin server you operate." width="900">
 
-**A native Android media player and client for the Jellyfin server you run.**
-
-[![Release](https://img.shields.io/github/v/release/NSKWeb/NPlayer?color=9ECAFF)](https://github.com/NSKWeb/NPlayer/releases)
+[![Release](https://img.shields.io/github/v/release/NSKWeb/NPlayer?color=9ECAFF&label=release)](https://github.com/NSKWeb/NPlayer/releases/latest)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![Platform](https://img.shields.io/badge/platform-Android%208.0%2B-3DDC84?logo=android&logoColor=white)](#install)
+[![Kotlin](https://img.shields.io/badge/Kotlin-2.0-7F52FF?logo=kotlin&logoColor=white)](NPlayer)
+[![Compose](https://img.shields.io/badge/Jetpack-Compose-4285F4?logo=jetpackcompose&logoColor=white)](NPlayer)
 
-Kotlin · Jetpack Compose · Media3 · Hilt · Room · min SDK 26
+**Kotlin · Jetpack Compose · Media3 · Hilt · Room · min SDK 26**
 
 </div>
 
@@ -16,6 +17,49 @@ Kotlin · Jetpack Compose · Media3 · Hilt · Room · min SDK 26
 N Player connects to a Jellyfin instance you host and control. It browses your
 libraries, streams or downloads your media, and keeps "Continue watching" in sync
 across your devices. It ships no content and talks only to the server URL you enter.
+
+## Install
+
+<div align="center">
+
+<img src="docs/qr-apk.svg" alt="QR code linking to the latest N Player APK download" width="180">
+
+**Scan to download the latest APK**
+
+</div>
+
+Three ways to get it on a device:
+
+| Route | How |
+|---|---|
+| **Direct download** | Grab `app-debug.apk` from the [latest release](https://github.com/NSKWeb/NPlayer/releases/latest) and open it on the phone |
+| **adb** | `adb install -r app-debug.apk` |
+| **Build it** | `cd NPlayer && ./gradlew :app:assembleDebug` — see [Build](#build) |
+
+Sideloading requires enabling *Install unknown apps* for your browser or file manager.
+The debug build installs as `com.example.nplayer.debug`, so it can sit alongside a
+release build.
+
+## Screens
+
+<div align="center">
+
+<img src="docs/screen-home.svg" alt="Home screen with a Recently added poster grid" width="230">
+<img src="docs/screen-search.svg" alt="Search screen with a library search field and results grid" width="230">
+<img src="docs/screen-detail.svg" alt="Detail screen with backdrop, title, metadata, Play button and synopsis" width="230">
+
+<img src="docs/screen-player.svg" alt="Player screen with video surface and transport controls" width="230">
+<img src="docs/screen-downloads.svg" alt="Downloads screen listing items with progress bars" width="230">
+<img src="docs/screen-settings.svg" alt="Settings screen with account info and biometric lock toggle" width="230">
+
+</div>
+
+> **Note on these images.** They are accurate mockups rendered from the real Compose
+> layouts, theme tokens, and navigation structure — not photographs of a running
+> device. This project was built and verified by compilation, lint, and unit tests in
+> a headless environment with no KVM, so no emulator screenshot could be captured. The
+> layouts, colours, and copy match the code; real screenshots will replace them once
+> the app has been run on a device.
 
 ## Do I need an API key?
 
@@ -63,7 +107,7 @@ the data layer knows about Retrofit, and nothing below the UI layer knows about 
 </div>
 
 ```
-app/src/main/java/com/example/nplayer/
+NPlayer/app/src/main/java/com/example/nplayer/
 ├── data/
 │   ├── local/        Room database + DataStore position store
 │   ├── prefs/        SessionStore, DeviceIdProvider
@@ -218,13 +262,75 @@ native to the device without a theme picker.
   rejected rather than silently allowed.
 - **Credentials stay on device.** Only the server-issued token is stored, in DataStore.
 
+## Hosting the APK
+
+You do not need a server to ship this. GitHub hosts the release asset for free, and
+that is what the download link and QR code point at.
+
+### GitHub Releases — the current setup
+
+The APK is published as a release asset, so the download URL is stable across versions:
+
+```
+https://github.com/NSKWeb/NPlayer/releases/latest/download/app-debug.apk
+```
+
+That `latest/download/<asset>` form always resolves to the newest release, so the link
+and the QR code never need updating. To publish a new build:
+
+```bash
+cd NPlayer
+./gradlew :app:assembleDebug
+
+gh release create v1.1.0 \
+  app/build/outputs/apk/debug/app-debug.apk \
+  --title "N Player 1.1.0" --notes "…"
+```
+
+Or without the `gh` CLI, via the API — create the release, then upload the asset:
+
+```bash
+# 1. create the release, note the returned id
+curl -X POST -H "Authorization: token $GITHUB_TOKEN" \
+  https://api.github.com/repos/NSKWeb/NPlayer/releases \
+  -d '{"tag_name":"v1.1.0","name":"N Player 1.1.0"}'
+
+# 2. upload the APK to that release id
+curl -X POST -H "Authorization: token $GITHUB_TOKEN" \
+  -H "Content-Type: application/vnd.android.package-archive" \
+  --data-binary @app/build/outputs/apk/debug/app-debug.apk \
+  "https://uploads.github.com/repos/NSKWeb/NPlayer/releases/<ID>/assets?name=app-debug.apk"
+```
+
+Because releases are versioned, users can also browse older builds under
+[Releases](https://github.com/NSKWeb/NPlayer/releases).
+
+### Other hosting options
+
+| Option | Best for | Trade-off |
+|---|---|---|
+| **GitHub Releases** *(in use)* | Free, versioned, stable URL, no infrastructure | Debug-signed; not on Play |
+| **GitHub Pages** | A small download landing page | You must commit the APK, or host it on Releases and link to it — a binary in git bloats history |
+| **Play Store** | Wide distribution, auto-updates | Requires a release keystore, an app bundle, a privacy policy, and review |
+| **F-Droid** | Open-source Android catalogue | Requires fully reproducible builds and a public signing setup |
+| **Self-hosted / S3 / Cloudflare R2** | Private or internal distribution | You own the bandwidth, TLS, and uptime |
+
+For Play, you would switch from `assembleDebug` to `bundleRelease` and sign with a
+real keystore — see [Signing a release](#signing-a-release). Everything else above
+works unchanged.
+
+### Keep the APK out of git
+
+Build output is git-ignored, and it should stay that way — a 27 MB binary in the
+history is painful to remove later. Publish through Releases instead.
+
 ## Repository layout
 
 ```
 .
 ├── NPlayer/            Gradle project — open this in Android Studio
 │   └── app/src/        Kotlin sources, Compose UI, resources
-├── docs/               SVG diagrams used by this README
+├── docs/               SVG diagrams and screen mockups used by this README
 └── LICENSE
 ```
 
@@ -257,7 +363,7 @@ with no Android dependencies.
 
 ### Signing a release
 
-Create `keystore.properties` in the project root (git-ignored):
+Create `keystore.properties` in `NPlayer/` (git-ignored):
 
 ```properties
 storeFile=/absolute/path/to/keystore.jks
