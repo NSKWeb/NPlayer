@@ -35,6 +35,10 @@ across your devices. It ships no content and talks only to the server URL you en
 
 ## Install
 
+> [!IMPORTANT]
+> **Android 8.0 (Oreo) or newer.** The app targets `minSdk 26`. There is no Play Store
+> listing, so every route below is a sideload. iOS is not supported.
+
 <div align="center">
 
 <img src="docs/qr-apk.svg" alt="QR code linking to the latest N Player APK download" width="180">
@@ -43,17 +47,49 @@ across your devices. It ships no content and talks only to the server URL you en
 
 </div>
 
-Three ways to get it on a device:
-
 | Route | How |
 |---|---|
-| **Direct download** | Grab `app-debug.apk` from the [latest release](https://github.com/NSKWeb/NPlayer/releases/latest) and open it on the phone |
-| **adb** | `adb install -r app-debug.apk` |
+| **Direct download** | Scan the code, or open the [latest release](https://github.com/NSKWeb/NPlayer/releases/latest) *on the phone* and tap `app-debug.apk` |
+| **adb** | From a computer with the phone plugged in: `adb install -r app-debug.apk` |
 | **Build it** | `cd NPlayer && ./gradlew :app:assembleDebug` — see [Build](#build) |
 
-Sideloading requires enabling *Install unknown apps* for your browser or file manager.
+### On your phone
+
+The direct download is the usual path. Scanning the QR opens
+`github.com/NSKWeb/NPlayer/releases/latest/download/app-debug.apk`, which always points
+at the newest release asset, so the code never goes stale.
+
+1. **Scan the QR** with the phone's camera, or open the release page in the phone's
+   browser. The file lands in **Downloads**.
+2. **Tap the downloaded `app-debug.apk`** — from the notification, or Files → Downloads.
+3. **Android will refuse the first time.** It shows *"For your security, your phone is
+   not allowed to install unknown apps from this source."* Tap **Settings**.
+4. **Allow this source.** You land on *Install unknown apps*; enable it for whichever
+   app you downloaded with (Chrome, Firefox, Files). Android 8+ grants this
+   **per app**, not globally, and only for the app that opens the APK.
+5. **Go back and tap Install.** Play Protect may warn that it does not recognise the
+   app. Choose **Install anyway** — see the note below for why.
+6. **Open N Player** from the launcher, then [connect to your server](#connecting-to-your-server).
+
+> [!NOTE]
+> **Why Play Protect warns.** Releases are signed with a debug key, not a published
+> release key, so Play Protect has never seen the signature before. The warning is
+> about *provenance*, not a detected threat. If you would rather verify the build
+> yourself than trust the binary, [build it from source](#build) instead — you get an
+> APK you compiled.
+
+### If the install is blocked
+
+| Symptom | Fix |
+|---|---|
+| *"App not installed"* | An older build with the same application id is present — uninstall it first |
+| *"There was a problem parsing the package"* | The download is incomplete. Re-download; check the file is ~25 MB |
+| *"Blocked by Play Protect"* | Tap *Install anyway*, or temporarily turn off scanning in the Play Store's Play Protect settings |
+| Tapping the APK does nothing | You opened it from a file manager without permission — grant *Install unknown apps* to that file manager |
+| Install option is greyed out | Some OEMs also require disabling *MIUI optimisation* / *Auto Blocker*; check the vendor's sideload settings |
+
 The debug build installs as `com.example.nplayer.debug`, so it can sit alongside a
-release build.
+release build without conflict.
 
 ## Screens
 
