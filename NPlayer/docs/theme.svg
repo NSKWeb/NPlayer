@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 540" width="900" height="540" role="img" aria-labelledby="title desc" font-family="ui-sans-serif, system-ui, 'Segoe UI', Roboto, sans-serif">
+  <title id="title">N Player colour system</title>
+  <desc id="desc">Colour tokens: the dark fallback palette with a near-black background, soft blue primary, and surface tones, plus the light fallback, and the Material 3 role mapping.</desc>
+
+  <defs>
+    <linearGradient id="bgt" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0B0B0F"/>
+      <stop offset="100%" stop-color="#121218"/>
+    </linearGradient>
+    <style>
+      .name { fill:#E8ECF3; font-size:12.5px; font-weight:600; }
+      .role { fill:#93A0B5; font-size:10.5px; }
+      .hex { fill:#6E7A90; font-size:10.5px; font-family:ui-monospace, SFMono-Regular, Menlo, monospace; }
+      .hdr { fill:#9ECAFF; font-size:14px; font-weight:700; }
+      .card { fill:#16161d; stroke:#2A3242; stroke-width:1.3; rx:12; }
+      .sw { rx:8; }
+    </style>
+  </defs>
+
+  <rect width="900" height="540" fill="url(#bgt)"/>
+  <text x="36" y="44" fill="#F2F5FA" font-size="21" font-weight="700">Colour system</text>
+  <text x="36" y="65" class="hex">Dark palette is the fallback. Dynamic colour takes over on Android 12+.</text>
+
+  <!-- Dark palette -->
+  <text x="36" y="104" class="hdr">Dark — fallback palette</text>
+  <rect x="36" y="116" width="828" height="176" class="card"/>
+
+  <!-- big primary swatch -->
+  <rect x="54" y="134" width="150" height="140" class="sw" fill="#9ECAFF"/>
+  <text x="66" y="250" fill="#0B0B0F" font-size="12px" font-weight="700">#9ECAFF</text>
+  <text x="66" y="266" fill="#26303F" font-size="10px">primary</text>
+
+  <rect x="216" y="134" width="150" height="140" class="sw" fill="#BBC7DB"/>
+  <text x="228" y="250" fill="#1A2230" font-size="12px" font-weight="700">#BBC7DB</text>
+  <text x="228" y="266" fill="#39465C" font-size="10px">secondary</text>
+
+  <rect x="378" y="134" width="150" height="140" class="sw" fill="#0B0B0F" stroke="#3A4356"/>
+  <text x="390" y="250" fill="#DCE3EE" font-size="12px" font-weight="700">#0B0B0F</text>
+  <text x="390" y="266" fill="#8C99AE" font-size="10px">background</text>
+
+  <rect x="540" y="134" width="150" height="140" class="sw" fill="#121218" stroke="#3A4356"/>
+  <text x="552" y="250" fill="#DCE3EE" font-size="12px" font-weight="700">#121218</text>
+  <text x="552" y="266" fill="#8C99AE" font-size="10px">surface</text>
+
+  <rect x="702" y="134" width="144" height="140" class="sw" fill="#1C1C24" stroke="#3A4356"/>
+  <text x="714" y="250" fill="#DCE3EE" font-size="12px" font-weight="700">#1C1C24</text>
+  <text x="714" y="266" fill="#8C99AE" font-size="10px">surfaceVariant</text>
+
+  <!-- Light palette -->
+  <text x="36" y="334" class="hdr">Light — fallback palette</text>
+  <rect x="36" y="346" width="828" height="86" class="card"/>
+  <rect x="54" y="362" width="60" height="54" class="sw" fill="#3B608F"/>
+  <text x="128" y="386" class="name">#3B608F</text>
+  <text x="128" y="404" class="role">primary — deeper blue so it holds contrast on light surfaces</text>
+  <rect x="470" y="362" width="60" height="54" class="sw" fill="#545F70"/>
+  <text x="544" y="386" class="name">#545F70</text>
+  <text x="544" y="404" class="role">secondary</text>
+
+  <!-- Role mapping -->
+  <text x="36" y="470" class="hdr">Material 3 role mapping</text>
+  <text x="36" y="496" class="role">primary / secondary are set explicitly. Every other role — onSurface, outline, error, containers —</text>
+  <text x="36" y="514" class="role">is derived by Material 3 from either the fixed palette or the wallpaper, so there is one theme path.</text>
+</svg>

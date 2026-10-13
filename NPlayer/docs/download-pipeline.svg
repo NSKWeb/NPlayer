@@ -1,0 +1,115 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 940 600" width="940" height="600" role="img" aria-labelledby="title desc" font-family="ui-sans-serif, system-ui, 'Segoe UI', Roboto, sans-serif">
+  <title id="title">Offline download pipeline</title>
+  <desc id="desc">Pipeline diagram: a download request enters the Media3 DownloadManager, which writes bytes into a SimpleCache, mirrors state into Room, and surfaces progress through a foreground service notification and the Compose downloads list.</desc>
+
+  <defs>
+    <linearGradient id="bg4" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0B0B0F"/>
+      <stop offset="100%" stop-color="#121218"/>
+    </linearGradient>
+    <marker id="ar4" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#7C8BA3"/>
+    </marker>
+    <style>
+      .n4 { fill:#1C1C24; stroke:#2E3646; stroke-width:1.5; rx:10; }
+      .net4 { fill:#152218; stroke:#2E5B3A; stroke-width:1.5; rx:10; }
+      .disk4 { fill:#1a1626; stroke:#4A3B6B; stroke-width:1.5; rx:10; }
+      .name4 { fill:#E8ECF3; font-size:12.5px; font-weight:600; }
+      .sub4 { fill:#93A0B5; font-size:10.5px; }
+      .tiny4 { fill:#6E7A90; font-size:9.5px; }
+      .f4 { stroke:#7C8BA3; stroke-width:1.7; fill:none; marker-end:url(#ar4); }
+      .f4d { stroke:#5C6A80; stroke-width:1.4; fill:none; stroke-dasharray:5 4; marker-end:url(#ar4); }
+      .l4 { fill:#9AA7BC; font-size:10.5px; }
+      .band { fill:#6E7A90; font-size:10px; font-weight:700; letter-spacing:.08em; }
+    </style>
+  </defs>
+
+  <rect width="940" height="600" fill="url(#bg4)"/>
+  <text x="36" y="44" fill="#F2F5FA" font-size="21" font-weight="700">Offline downloads — Media3 pipeline</text>
+  <text x="36" y="65" class="tiny4">The UI never touches Media3 directly: it observes Room, which mirrors download state.</text>
+
+  <text x="36" y="104" class="band">ENQUEUE</text>
+
+  <rect x="40" y="118" width="190" height="66" class="n4"/>
+  <text x="54" y="142" class="name4">UI action</text>
+  <text x="54" y="160" class="sub4">request download</text>
+  <text x="54" y="176" class="tiny4">request (itemId, uri)</text>
+
+  <line x1="230" y1="151" x2="286" y2="151" class="f4"/>
+
+  <rect x="286" y="118" width="230" height="66" class="n4"/>
+  <text x="300" y="142" class="name4">DownloadModule.manager</text>
+  <text x="300" y="160" class="sub4">DownloadManager (lazy, singleton)</text>
+  <text x="300" y="176" class="tiny4">maxParallelDownloads = 2</text>
+
+  <line x1="516" y1="151" x2="572" y2="151" class="f4"/>
+
+  <rect x="572" y="118" width="330" height="66" class="net4"/>
+  <text x="586" y="142" class="name4">NPlayerDownloadService</text>
+  <text x="586" y="160" class="sub4">foreground, dataSync type</text>
+  <text x="586" y="176" class="tiny4">NETWORK_UNMETERED — Wi-Fi only by default</text>
+
+  <text x="36" y="228" class="band">TRANSFER</text>
+
+  <rect x="40" y="242" width="270" height="80" class="net4"/>
+  <text x="54" y="266" class="name4">OkHttpDataSource</text>
+  <text x="54" y="284" class="sub4">reuses the app OkHttpClient</text>
+  <text x="54" y="302" class="tiny4">so Jellyfin auth headers ride along</text>
+  <text x="54" y="316" class="tiny4">GET /Videos/{id}/stream (static)</text>
+
+  <line x1="310" y1="282" x2="366" y2="282" class="f4"/>
+
+  <rect x="366" y="242" width="240" height="80" class="disk4"/>
+  <text x="380" y="266" class="name4">SimpleCache</text>
+  <text x="380" y="284" class="sub4">externalFilesDir/downloads</text>
+  <text x="380" y="302" class="tiny4">NoOpCacheEvictor — kept forever</text>
+  <text x="380" y="316" class="tiny4">the user chose to keep it</text>
+
+  <line x1="606" y1="282" x2="662" y2="282" class="f4"/>
+
+  <rect x="662" y="242" width="240" height="80" class="disk4"/>
+  <text x="676" y="266" class="name4">DefaultDownloadIndex</text>
+  <text x="676" y="284" class="sub4">StandaloneDatabaseProvider</text>
+  <text x="676" y="302" class="tiny4">Media3's own record of every</text>
+  <text x="676" y="316" class="tiny4">download, its state and progress</text>
+
+  <text x="36" y="368" class="band">MIRROR + OBSERVE</text>
+
+  <rect x="40" y="382" width="300" height="86" class="n4"/>
+  <text x="54" y="406" class="name4">DownloadManager.Listener</text>
+  <text x="54" y="424" class="sub4">onDownloadChanged → upsert</text>
+  <text x="54" y="441" class="sub4">onDownloadRemoved → delete</text>
+  <text x="54" y="458" class="tiny4">seeds existing rows on first construction</text>
+
+  <line x1="340" y1="425" x2="396" y2="425" class="f4"/>
+
+  <rect x="396" y="382" width="230" height="86" class="disk4"/>
+  <text x="410" y="406" class="name4">Room: downloads</text>
+  <text x="410" y="424" class="sub4">state · progressPercent</text>
+  <text x="410" y="441" class="sub4">bytesDownloaded · updatedAt</text>
+  <text x="410" y="458" class="tiny4">single source of truth for the UI</text>
+
+  <line x1="626" y1="425" x2="682" y2="425" class="f4"/>
+
+  <rect x="682" y="382" width="220" height="86" class="n4"/>
+  <text x="696" y="406" class="name4">DownloadsScreen</text>
+  <text x="696" y="424" class="sub4">DownloadsViewModel</text>
+  <text x="696" y="441" class="sub4">Flow → StateFlow</text>
+  <text x="696" y="458" class="tiny4">recomposes on every change</text>
+
+  <text x="36" y="510" class="band">NOTIFY</text>
+
+  <rect x="40" y="524" width="420" height="56" class="n4"/>
+  <text x="54" y="548" class="name4">DownloadNotificationHelper</text>
+  <text x="54" y="566" class="sub4">buildProgressNotification → channel nplayer_downloads</text>
+
+  <line x1="460" y1="552" x2="516" y2="552" class="f4d"/>
+
+  <rect x="516" y="524" width="386" height="56" class="n4"/>
+  <text x="530" y="548" class="name4">Foreground service notification</text>
+  <text x="530" y="566" class="sub4">progress + pause / resume actions · 1 s update interval</text>
+
+  <!-- loop-back: state also flows back to index -->
+  <path d="M 511 424 C 540 340, 640 340, 662 322" class="f4d"/>
+  <text x="556" y="360" class="l4">progress written back</text>
+</svg>
