@@ -1,6 +1,10 @@
 <div align="center">
 
-<img src="docs/hero.svg" alt="N Player — your media, your server, your rules. A native Android client for the Jellyfin server you operate." width="900">
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/hero-dark.svg">
+  <source media="(prefers-color-scheme: light)" srcset="docs/hero-light.svg">
+  <img src="docs/hero-dark.svg" alt="N Player — your media, your server, your rules. A native Android client for the Jellyfin server you operate." width="900">
+</picture>
 
 [![Android CI](https://github.com/NSKWeb/NPlayer/actions/workflows/android.yml/badge.svg)](https://github.com/NSKWeb/NPlayer/actions/workflows/android.yml)
 [![Release](https://img.shields.io/github/v/release/NSKWeb/NPlayer?color=9ECAFF&label=release)](https://github.com/NSKWeb/NPlayer/releases/latest)
@@ -18,6 +22,16 @@
 N Player connects to a Jellyfin instance you host and control. It browses your
 libraries, streams or downloads your media, and keeps "Continue watching" in sync
 across your devices. It ships no content and talks only to the server URL you enter.
+
+<div align="center">
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/features-dark.svg">
+  <source media="(prefers-color-scheme: light)" srcset="docs/features-light.svg">
+  <img src="docs/features-dark.svg" alt="Six feature cards: direct play first, offline downloads, resume anywhere, biometric lock, fast library search, and dynamic colour." width="900">
+</picture>
+
+</div>
 
 ## Install
 
@@ -55,16 +69,18 @@ release build.
 
 </div>
 
-> **Note on these images.** They are accurate mockups rendered from the real Compose
-> layouts, theme tokens, and navigation structure — not photographs of a running
-> device. This project was built and verified by compilation, lint, and unit tests in
-> a headless environment with no KVM, so no emulator screenshot could be captured. The
-> layouts, colours, and copy match the code; real screenshots will replace them once
-> the app has been run on a device.
+> [!NOTE]
+> **These are accurate mockups, not photographs of a running device.** They are
+> rendered from the real Compose layouts, theme tokens, and navigation structure. This
+> project was built and verified by compilation, lint, and unit tests in a headless
+> environment with no KVM, so no emulator screenshot could be captured. The layouts,
+> colours, and copy match the code; real screenshots will replace them once the app has
+> been run on a device.
 
 ## Do I need an API key?
 
-**No.** Jellyfin does not use API keys for client access.
+> [!TIP]
+> **No.** Jellyfin does not use API keys for client access.
 
 You supply two things you already have:
 
@@ -123,6 +139,10 @@ NPlayer/app/src/main/java/com/example/nplayer/
 
 ### How a request finds the right server
 
+<details>
+<summary>Interceptors, and why the API declares only relative paths</summary>
+
+
 Retrofit is built once against a placeholder origin. The real host is not known
 until the user types it, so two OkHttp interceptors do the work at request time:
 
@@ -135,6 +155,8 @@ until the user types it, so two OkHttp interceptors do the work at request time:
 
 This is why `JellyfinApi` declares only relative paths. There is no build-time
 server baked into the app.
+
+</details>
 
 ### Error handling
 
@@ -161,6 +183,9 @@ and correct audio focus for free.
 
 ### Direct play versus transcode
 
+<details>
+<summary>The container allowlist, and why it matters</summary>
+
 `StreamUrls` is a pure Kotlin object, which is what makes it unit-testable without
 a device. Given a media source it decides:
 
@@ -172,7 +197,13 @@ a device. Given a media source it decides:
 Direct play avoids burning server CPU. Transcoding guarantees something playable
 when the container is one ExoPlayer cannot demux.
 
+</details>
+
 ### Resume position
+
+<details>
+<summary>Stored twice — locally and on the server</summary>
+
 
 Resume is stored twice, on purpose:
 
@@ -188,6 +219,8 @@ final position.
 
 Media bytes themselves flow through `OkHttpDataSource`, so the same auth headers
 that protect API calls also protect the video stream.
+
+</details>
 
 ## Offline downloads
 
@@ -259,8 +292,10 @@ native to the device without a theme picker.
 - **No device-identity spoofing.** `DeviceIdProvider` reads the platform's own
   `ANDROID_ID` and prefixes it. This is resettable by the user and exists so a user can
   revoke one device from their server dashboard — the opposite of a rotating fingerprint.
-- **Cleartext is disabled.** `usesCleartextTraffic="false"` means an `http://` server is
-  rejected rather than silently allowed.
+> [!IMPORTANT]
+> **Cleartext is disabled.** `usesCleartextTraffic="false"` means an `http://` server is
+> rejected rather than silently allowed. Use TLS on your Jellyfin server, or a reverse
+> proxy in front of it.
 - **Credentials stay on device.** Only the server-issued token is stored, in DataStore.
 
 ## Hosting the APK
