@@ -121,7 +121,7 @@
   fetch('https://api.github.com/repos/NSKWeb/NPlayer/releases/latest')
     .then(r => r.ok ? r.json() : Promise.reject())
     .then(rel => {
-      const apk = (rel.assets || []).find(a => a.name.endsWith('.apk'));
+      const apk = (rel.assets || []).find(a => a.name === 'NPlayer.apk');
       if (!apk) return;
       const mb = (apk.size / 1048576).toFixed(1);
       document.getElementById('size').textContent =
