@@ -15,6 +15,7 @@ import com.example.nplayer.ui.BiometricGate
 import com.example.nplayer.ui.navigation.NPlayerApp
 import com.example.nplayer.ui.settings.SettingsViewModel
 import com.example.nplayer.ui.theme.NPlayerTheme
+import com.example.nplayer.ui.theme.resolveDark
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
@@ -23,13 +24,14 @@ class MainActivity : FragmentActivity() {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)
         setContent {
-            NPlayerTheme {
+            val settingsViewModel: SettingsViewModel = hiltViewModel()
+            val settings by settingsViewModel.state.collectAsStateWithLifecycle()
+
+            NPlayerTheme(darkTheme = settings.themeMode.resolveDark()) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background,
                 ) {
-                    val settingsViewModel: SettingsViewModel = hiltViewModel()
-                    val settings by settingsViewModel.state.collectAsStateWithLifecycle()
                     BiometricGate(enabled = settings.biometricLock, activity = this) {
                         NPlayerApp()
                     }

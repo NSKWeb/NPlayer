@@ -1,4 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="ic_launcher_background">#0B0B0F</color>
+    <!-- Matches lightColorScheme().background so there is no flash before the first frame. -->
+    <color name="window_background">#FFFFFBFE</color>
 </resources>

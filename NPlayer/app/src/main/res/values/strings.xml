@@ -16,6 +16,13 @@
     <string name="biometric_title">Biometric lock</string>
     <string name="biometric_subtitle">Require biometric unlock to open the app</string>
 
+    <string name="appearance">Appearance</string>
+    <string name="theme_title">Theme</string>
+    <string name="theme_subtitle">Choose light, dark, or follow the system setting</string>
+    <string name="theme_system">System</string>
+    <string name="theme_light">Light</string>
+    <string name="theme_dark">Dark</string>
+
     <string name="error_generic">Something went wrong</string>
     <string name="error_offline">No network connection</string>
     <string name="retry">Retry</string>

@@ -22,6 +22,7 @@ data class Session(
     val userName: String? = null,
     val deviceId: String,
     val biometricLockEnabled: Boolean = false,
+    val themeMode: ThemeMode = ThemeMode.SYSTEM,
 ) {
     val isAuthenticated: Boolean
         get() = !serverUrl.isNullOrBlank() && !accessToken.isNullOrBlank() && !userId.isNullOrBlank()
@@ -37,6 +38,7 @@ class SessionStore @Inject constructor(
     private val userIdKey = stringPreferencesKey("user_id")
     private val userNameKey = stringPreferencesKey("user_name")
     private val biometricKey = booleanPreferencesKey("biometric_lock")
+    private val themeModeKey = stringPreferencesKey("theme_mode")
 
     private val fallbackDeviceId = deviceIdProvider.deviceId
 
@@ -48,6 +50,7 @@ class SessionStore @Inject constructor(
             userName = prefs[userNameKey],
             deviceId = fallbackDeviceId,
             biometricLockEnabled = prefs[biometricKey] ?: false,
+            themeMode = ThemeMode.fromStorage(prefs[themeModeKey]),
         )
     }
 
@@ -69,6 +72,10 @@ class SessionStore @Inject constructor(
 
     suspend fun setBiometricLock(enabled: Boolean) {
         context.dataStore.edit { it[biometricKey] = enabled }
+    }
+
+    suspend fun setThemeMode(mode: ThemeMode) {
+        context.dataStore.edit { it[themeModeKey] = mode.name }
     }
 
     suspend fun clear() {

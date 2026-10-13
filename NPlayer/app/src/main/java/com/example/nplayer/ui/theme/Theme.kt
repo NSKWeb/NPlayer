@@ -10,6 +10,7 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import com.example.nplayer.data.prefs.ThemeMode
 
 private val DarkColors = darkColorScheme(
     primary = Color(0xFF9ECAFF),
@@ -38,4 +39,12 @@ fun NPlayerTheme(
         else -> LightColors
     }
     MaterialTheme(colorScheme = colorScheme, content = content)
+}
+
+/** Resolves [mode] against the device setting to a concrete light/dark choice. */
+@Composable
+fun ThemeMode.resolveDark(): Boolean = when (this) {
+    ThemeMode.SYSTEM -> isSystemInDarkTheme()
+    ThemeMode.LIGHT -> false
+    ThemeMode.DARK -> true
 }
