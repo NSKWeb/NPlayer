@@ -30,10 +30,6 @@ jobs:
 
       - name: Configure Pages
         uses: actions/configure-pages@v5
-        with:
-          # Turns Pages on for the repo on first run, using the workflow as the
-          # source. Removes the manual Settings -> Pages step.
-          enablement: true
 
       - name: Upload site
         uses: actions/upload-pages-artifact@v3
