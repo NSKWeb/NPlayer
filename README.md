@@ -4,7 +4,6 @@
 
 **A native Android media player and client for the Jellyfin server you run.**
 
-[![Android CI](https://github.com/NSKWeb/NPlayer/actions/workflows/android.yml/badge.svg)](https://github.com/NSKWeb/NPlayer/actions/workflows/android.yml)
 [![Release](https://img.shields.io/github/v/release/NSKWeb/NPlayer?color=9ECAFF)](https://github.com/NSKWeb/NPlayer/releases)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
