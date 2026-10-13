@@ -2,6 +2,7 @@
 
 <img src="docs/hero.svg" alt="N Player — your media, your server, your rules. A native Android client for the Jellyfin server you operate." width="900">
 
+[![Android CI](https://github.com/NSKWeb/NPlayer/actions/workflows/android.yml/badge.svg)](https://github.com/NSKWeb/NPlayer/actions/workflows/android.yml)
 [![Release](https://img.shields.io/github/v/release/NSKWeb/NPlayer?color=9ECAFF&label=release)](https://github.com/NSKWeb/NPlayer/releases/latest)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/platform-Android%208.0%2B-3DDC84?logo=android&logoColor=white)](#install)
