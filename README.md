@@ -73,19 +73,19 @@ files are there.
 
 | Route | How |
 |---|---|
-| **Direct download** | Scan the code, or open the [latest release](https://github.com/NSKWeb/NPlayer/releases/latest) *on the phone* and tap `app-debug.apk` |
-| **adb** | From a computer with the phone plugged in: `adb install -r app-debug.apk` |
+| **Direct download** | Scan the code, or open the [latest release](https://github.com/NSKWeb/NPlayer/releases/latest) *on the phone* and tap `NPlayer.apk` |
+| **adb** | From a computer with the phone plugged in: `adb install -r NPlayer.apk` |
 | **Build it** | `cd NPlayer && ./gradlew :app:assembleDebug` — see [Build](#build) |
 
 ### On your phone
 
 The direct download is the usual path. Scanning the QR opens
-`github.com/NSKWeb/NPlayer/releases/latest/download/app-debug.apk`, which always points
+`github.com/NSKWeb/NPlayer/releases/latest/download/NPlayer.apk`, which always points
 at the newest release asset, so the code never goes stale.
 
 1. **Scan the QR** with the phone's camera, or open the release page in the phone's
    browser. The file lands in **Downloads**.
-2. **Tap the downloaded `app-debug.apk`** — from the notification, or Files → Downloads.
+2. **Tap the downloaded `NPlayer.apk`** — from the notification, or Files → Downloads.
 3. **Android will refuse the first time.** It shows *"For your security, your phone is
    not allowed to install unknown apps from this source."* Tap **Settings**.
 4. **Allow this source.** You land on *Install unknown apps*; enable it for whichever
@@ -321,7 +321,7 @@ that is what the download link and QR code point at.
 The APK is published as a release asset, so the download URL is stable across versions:
 
 ```
-https://github.com/NSKWeb/NPlayer/releases/latest/download/app-debug.apk
+https://github.com/NSKWeb/NPlayer/releases/latest/download/NPlayer.apk
 ```
 
 That `latest/download/<asset>` form always resolves to the newest release, so the link
@@ -332,7 +332,7 @@ cd NPlayer
 ./gradlew :app:assembleDebug
 
 gh release create v1.1.0 \
-  app/build/outputs/apk/debug/app-debug.apk \
+  app/build/outputs/apk/debug/NPlayer.apk \
   --title "N Player 1.1.0" --notes "…"
 ```
 
@@ -347,8 +347,8 @@ curl -X POST -H "Authorization: token $GITHUB_TOKEN" \
 # 2. upload the APK to that release id
 curl -X POST -H "Authorization: token $GITHUB_TOKEN" \
   -H "Content-Type: application/vnd.android.package-archive" \
-  --data-binary @app/build/outputs/apk/debug/app-debug.apk \
-  "https://uploads.github.com/repos/NSKWeb/NPlayer/releases/<ID>/assets?name=app-debug.apk"
+  --data-binary @app/build/outputs/apk/debug/NPlayer.apk \
+  "https://uploads.github.com/repos/NSKWeb/NPlayer/releases/<ID>/assets?name=NPlayer.apk"
 ```
 
 Because releases are versioned, users can also browse older builds under
@@ -398,7 +398,7 @@ cd NPlayer
 ./gradlew :app:assembleRelease      # minified release APK
 ```
 
-Debug output lands at `NPlayer/app/build/outputs/apk/debug/app-debug.apk`.
+Debug output lands at `NPlayer/app/build/outputs/apk/debug/NPlayer.apk`.
 
 CI builds and tests on every push and pull request, and uploads the test report and
 APK as artifacts.

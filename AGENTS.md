@@ -31,6 +31,12 @@ cd NPlayer
 ./gradlew :app:assembleRelease      # minified release APK (R8 + resource shrinking)
 ```
 
+Both variants are emitted as `app/build/outputs/apk/<variant>/NPlayer.apk`, not the AGP
+default `app-<variant>.apk`. That name is the release asset name, so the stable
+`releases/latest/download/NPlayer.apk` link, the README, the install page, and the QR
+code (`docs/qr-apk.svg`) all depend on it. If you rename the artifact, update those too
+and regenerate the QR.
+
 CI (`.github/workflows/android.yml`) runs `testDebugUnitTest` then `assembleDebug` on
 every push and pull request. `release.yml` builds and publishes the debug APK as a
 release asset on a `v*` tag.

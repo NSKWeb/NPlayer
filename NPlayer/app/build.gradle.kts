@@ -76,6 +76,23 @@ android {
     }
 }
 
+// Name the built artifact NPlayer.apk instead of the default app-<variant>.apk. The
+// release asset keeps this name, so the stable
+// releases/latest/download/NPlayer.apk link never has to change.
+//
+// VariantOutput.outputFileName is not part of the public variant API in AGP 8.x, so the
+// cast reaches the internal implementation. If AGP ever drops it the rename silently
+// stops happening — release.yml guards that with `test -f NPlayer.apk`.
+androidComponents {
+    onVariants { variant ->
+        variant.outputs.forEach { output ->
+            (output as? com.android.build.api.variant.impl.VariantOutputImpl)
+                ?.outputFileName
+                ?.set("NPlayer.apk")
+        }
+    }
+}
+
 dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)

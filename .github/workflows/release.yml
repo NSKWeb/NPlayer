@@ -62,11 +62,11 @@ jobs:
         run: |
           set -eu
           TAG="${{ steps.meta.outputs.tag }}"
-          APK="NPlayer/app/build/outputs/apk/debug/app-debug.apk"
+          APK="NPlayer/app/build/outputs/apk/debug/NPlayer.apk"
           test -f "$APK"
 
           # The asset keeps its plain name so the stable
-          # releases/latest/download/app-debug.apk link stays valid.
+          # releases/latest/download/NPlayer.apk link stays valid.
           if gh release view "$TAG" >/dev/null 2>&1; then
             gh release upload "$TAG" "$APK" --clobber
           else
