@@ -1,8 +1,9 @@
 package com.example.nplayer.ui.navigation
 
+import android.net.Uri
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
@@ -15,35 +16,33 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.example.nplayer.ui.auth.AuthScreen
-import com.example.nplayer.ui.auth.AuthViewModel
 import com.example.nplayer.ui.detail.DetailScreen
-import com.example.nplayer.ui.downloads.DownloadsScreen
+import com.example.nplayer.ui.favourites.FavouritesScreen
 import com.example.nplayer.ui.home.HomeScreen
 import com.example.nplayer.ui.player.PlayerScreen
 import com.example.nplayer.ui.search.SearchScreen
 import com.example.nplayer.ui.settings.SettingsScreen
-import com.example.nplayer.ui.settings.SettingsViewModel
 
 object Routes {
     const val HOME = "home"
     const val SEARCH = "search"
-    const val DOWNLOADS = "downloads"
+    const val FAVOURITES = "favourites"
     const val SETTINGS = "settings"
-    const val AUTH = "auth"
-    const val DETAIL = "detail/{itemId}"
-    const val PLAYER = "player/{itemId}"
+    const val DETAIL = "detail/{itemKey}"
+    const val PLAYER = "player/{itemKey}"
 
-    fun detail(id: String) = "detail/$id"
-    fun player(id: String) = "player/$id"
+    // Item keys are `content://` URIs, so they must be encoded to survive as a
+    // single path segment and decoded on the way back out.
+    fun detail(itemKey: String) = "detail/${Uri.encode(itemKey)}"
+    fun player(itemKey: String) = "player/${Uri.encode(itemKey)}"
+
+    fun decodeItemKey(raw: String?): String = Uri.decode(raw.orEmpty())
 }
 
 private data class Tab(val route: String, val label: String, val icon: ImageVector)
@@ -51,7 +50,7 @@ private data class Tab(val route: String, val label: String, val icon: ImageVect
 private val tabs = listOf(
     Tab(Routes.HOME, "Home", Icons.Filled.Home),
     Tab(Routes.SEARCH, "Search", Icons.Filled.Search),
-    Tab(Routes.DOWNLOADS, "Downloads", Icons.Filled.Download),
+    Tab(Routes.FAVOURITES, "Favourites", Icons.Filled.Favorite),
     Tab(Routes.SETTINGS, "Settings", Icons.Filled.Settings),
 )
 
@@ -91,42 +90,27 @@ fun NPlayerApp() {
             modifier = Modifier.padding(innerPadding),
         ) {
             composable(Routes.HOME) {
-                HomeScreen(
-                    onOpenDetail = { navController.navigate(Routes.detail(it)) },
-                    onRequireAuth = { navController.navigate(Routes.AUTH) },
-                )
+                HomeScreen(onOpenDetail = { navController.navigate(Routes.detail(it)) })
             }
             composable(Routes.SEARCH) {
                 SearchScreen(onOpenDetail = { navController.navigate(Routes.detail(it)) })
             }
-            composable(Routes.DOWNLOADS) { DownloadsScreen() }
-            composable(Routes.SETTINGS) {
-                SettingsScreen(
-                    onSignOut = {
-                        navController.navigate(Routes.AUTH) {
-                            popUpTo(0) { inclusive = true }
-                        }
-                    },
-                )
+            composable(Routes.FAVOURITES) {
+                FavouritesScreen(onOpenDetail = { navController.navigate(Routes.detail(it)) })
             }
-            composable(Routes.AUTH) {
-                AuthScreen(onAuthenticated = {
-                    navController.navigate(Routes.HOME) {
-                        popUpTo(Routes.AUTH) { inclusive = true }
-                    }
-                })
-            }
+            composable(Routes.SETTINGS) { SettingsScreen() }
             composable(Routes.DETAIL) { entry ->
-                val itemId = entry.arguments?.getString("itemId").orEmpty()
                 DetailScreen(
-                    itemId = itemId,
+                    itemKey = Routes.decodeItemKey(entry.arguments?.getString("itemKey")),
                     onBack = { navController.popBackStack() },
                     onPlay = { navController.navigate(Routes.player(it)) },
                 )
             }
             composable(Routes.PLAYER) { entry ->
-                val itemId = entry.arguments?.getString("itemId").orEmpty()
-                PlayerScreen(itemId = itemId, onBack = { navController.popBackStack() })
+                PlayerScreen(
+                    itemKey = Routes.decodeItemKey(entry.arguments?.getString("itemKey")),
+                    onBack = { navController.popBackStack() },
+                )
             }
         }
     }

@@ -3,10 +3,10 @@ package com.example.nplayer.ui.detail
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.nplayer.data.remote.model.BaseItemDto
-import com.example.nplayer.data.repository.ApiResult
-import com.example.nplayer.data.repository.LibraryRepository
-import com.example.nplayer.playback.StreamUrlBuilder
+import com.example.nplayer.data.media.MediaItem
+import com.example.nplayer.data.media.MediaLibrary
+import com.example.nplayer.data.prefs.AppSettingsStore
+import com.example.nplayer.data.prefs.PlaybackPositionStore
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -16,21 +16,20 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 data class DetailUiState(
-    val isLoading: Boolean = true,
-    val item: BaseItemDto? = null,
-    val imageUrl: String? = null,
-    val error: String? = null,
-    val isFavorite: Boolean = false,
+    val item: MediaItem? = null,
+    val isFavourite: Boolean = false,
+    val resumePositionMillis: Long = 0L,
 )
 
 @HiltViewModel
 class DetailViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle,
-    private val libraryRepository: LibraryRepository,
-    private val streamUrlBuilder: StreamUrlBuilder,
+    private val library: MediaLibrary,
+    private val settingsStore: AppSettingsStore,
+    private val positionStore: PlaybackPositionStore,
 ) : ViewModel() {
 
-    private val itemId: String = savedStateHandle.get<String>("itemId").orEmpty()
+    private val itemKey: String = savedStateHandle.get<String>("itemKey").orEmpty()
 
     private val _state = MutableStateFlow(DetailUiState())
     val state: StateFlow<DetailUiState> = _state.asStateFlow()
@@ -39,31 +38,24 @@ class DetailViewModel @Inject constructor(
 
     fun load() {
         viewModelScope.launch {
-            _state.update { it.copy(isLoading = true, error = null) }
-            when (val result = libraryRepository.item(itemId)) {
-                is ApiResult.Success -> {
-                    val item = result.data
-                    _state.update {
-                        it.copy(
-                            isLoading = false,
-                            item = item,
-                            imageUrl = streamUrlBuilder.imageUrl(item.id, item.primaryImageTag),
-                            isFavorite = item.userData?.isFavorite == true,
-                        )
-                    }
-                }
-                is ApiResult.Failure -> _state.update {
-                    it.copy(isLoading = false, error = "Could not load item")
-                }
+            library.refreshIfEmpty()
+            val item = library.find(itemKey)
+            val settings = settingsStore.current()
+            val position = positionStore.position(itemKey)
+            _state.update {
+                it.copy(
+                    item = item,
+                    isFavourite = itemKey in settings.favourites,
+                    resumePositionMillis = position,
+                )
             }
         }
     }
 
-    fun toggleFavorite() {
-        val newValue = !_state.value.isFavorite
+    fun toggleFavourite() {
         viewModelScope.launch {
-            libraryRepository.markFavorite(itemId, newValue)
-            _state.update { it.copy(isFavorite = newValue) }
+            val favourites = settingsStore.toggleFavourite(itemKey)
+            _state.update { it.copy(isFavourite = itemKey in favourites) }
         }
     }
 }

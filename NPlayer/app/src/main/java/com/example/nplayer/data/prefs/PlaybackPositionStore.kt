@@ -1,4 +1,4 @@
-package com.example.nplayer.data.local
+package com.example.nplayer.data.prefs
 
 import android.content.Context
 import androidx.datastore.preferences.core.edit
@@ -13,21 +13,21 @@ import javax.inject.Singleton
 private val Context.positionStore by preferencesDataStore(name = "nplayer_positions")
 
 /**
- * Per-item resume positions, millisecond precision. Kept in DataStore (small,
- * frequent writes) rather than Room so position updates never churn the DB.
+ * Per-item resume positions, millisecond precision, keyed by media URI. Kept in
+ * DataStore because positions are written every few seconds and would churn a DB.
  */
 @Singleton
 class PlaybackPositionStore @Inject constructor(
     @ApplicationContext private val context: Context,
 ) {
-    suspend fun position(itemId: String): Long =
-        context.positionStore.data.map { it[key(itemId)] ?: 0L }.first()
+    suspend fun position(itemKey: String): Long =
+        context.positionStore.data.map { it[key(itemKey)] ?: 0L }.first()
 
-    suspend fun save(itemId: String, positionMillis: Long) {
+    suspend fun save(itemKey: String, positionMillis: Long) {
         context.positionStore.edit { prefs ->
-            if (positionMillis < 5_000) prefs.remove(key(itemId)) else prefs[key(itemId)] = positionMillis
+            if (positionMillis < 5_000) prefs.remove(key(itemKey)) else prefs[key(itemKey)] = positionMillis
         }
     }
 
-    private fun key(itemId: String) = longPreferencesKey("pos_$itemId")
+    private fun key(itemKey: String) = longPreferencesKey("pos_$itemKey")
 }

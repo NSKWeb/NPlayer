@@ -1,8 +1,2 @@
-# Retrofit / Gson model classes are reflected over.
--keepattributes Signature
+# Keep annotations; Media3 and Hilt ship their own consumer ProGuard rules.
 -keepattributes *Annotation*
--keep class com.example.nplayer.data.remote.model.** { *; }
-
--dontwarn okhttp3.**
--dontwarn okio.**
--dontwarn retrofit2.**

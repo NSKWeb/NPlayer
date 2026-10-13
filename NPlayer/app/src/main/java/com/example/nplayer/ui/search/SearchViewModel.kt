@@ -2,10 +2,8 @@ package com.example.nplayer.ui.search
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.nplayer.data.remote.model.BaseItemDto
-import com.example.nplayer.data.repository.ApiResult
-import com.example.nplayer.data.repository.LibraryRepository
-import com.example.nplayer.playback.StreamUrlBuilder
+import com.example.nplayer.data.media.MediaItem
+import com.example.nplayer.data.media.MediaLibrary
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -18,15 +16,14 @@ import javax.inject.Inject
 
 data class SearchUiState(
     val query: String = "",
-    val isLoading: Boolean = false,
-    val results: List<BaseItemDto> = emptyList(),
-    val imageUrls: Map<String, String> = emptyMap(),
-)
+    val results: List<MediaItem> = emptyList(),
+) {
+    val hasQuery: Boolean get() = query.length >= 2
+}
 
 @HiltViewModel
 class SearchViewModel @Inject constructor(
-    private val libraryRepository: LibraryRepository,
-    private val streamUrlBuilder: StreamUrlBuilder,
+    private val library: MediaLibrary,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(SearchUiState())
@@ -37,25 +34,16 @@ class SearchViewModel @Inject constructor(
     fun onQueryChange(value: String) {
         _state.update { it.copy(query = value) }
         searchJob?.cancel()
+
         if (value.length < 2) {
-            _state.update { it.copy(results = emptyList(), isLoading = false) }
+            _state.update { it.copy(results = emptyList()) }
             return
         }
+
         searchJob = viewModelScope.launch {
-            delay(300) // debounce
-            _state.update { it.copy(isLoading = true) }
-            when (val result = libraryRepository.search(value)) {
-                is ApiResult.Success -> {
-                    val items = result.data.items
-                    val urls = items.associate { item ->
-                        item.id to (streamUrlBuilder.imageUrl(item.id, item.primaryImageTag) ?: "")
-                    }
-                    _state.update { it.copy(isLoading = false, results = items, imageUrls = urls) }
-                }
-                is ApiResult.Failure -> _state.update { it.copy(isLoading = false, results = emptyList()) }
-            }
+            delay(200) // debounce keystrokes
+            library.refreshIfEmpty()
+            _state.update { it.copy(results = library.search(value)) }
         }
     }
-
-    fun image(item: BaseItemDto): String? = _state.value.imageUrls[item.id]?.takeIf { it.isNotBlank() }
 }

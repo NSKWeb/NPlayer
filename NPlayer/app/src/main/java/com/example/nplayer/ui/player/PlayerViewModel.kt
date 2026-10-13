@@ -4,8 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.session.MediaController
-import com.example.nplayer.data.repository.ApiResult
-import com.example.nplayer.data.repository.LibraryRepository
+import com.example.nplayer.data.media.MediaLibrary
 import com.example.nplayer.playback.PlaybackController
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -26,32 +25,31 @@ data class PlayerUiState(
 @UnstableApi
 @HiltViewModel
 class PlayerViewModel @Inject constructor(
-    private val libraryRepository: LibraryRepository,
+    private val library: MediaLibrary,
     private val playbackController: PlaybackController,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(PlayerUiState())
     val state: StateFlow<PlayerUiState> = _state.asStateFlow()
 
-    fun onEnter(itemId: String) {
+    fun onEnter(itemKey: String) {
         viewModelScope.launch {
-            val future = playbackController.connect()
-            val controller = future.get()
+            val controller = playbackController.connect().get()
             _state.update { it.copy(player = controller, controller = controller) }
 
-            when (val result = libraryRepository.item(itemId)) {
-                is ApiResult.Success -> {
-                    val item = result.data
-                    _state.update { it.copy(title = item.name) }
-                    playbackController.play(item)
-                }
-                is ApiResult.Failure -> _state.update { it.copy(error = "Could not start playback") }
+            library.refreshIfEmpty()
+            val item = library.find(itemKey)
+            if (item == null) {
+                _state.update { it.copy(error = "That file is no longer available") }
+                return@launch
             }
+            _state.update { it.copy(title = item.title) }
+            playbackController.play(item)
         }
     }
 
-    fun onLeave(itemId: String) {
-        viewModelScope.launch { playbackController.stop(itemId) }
+    fun onLeave(itemKey: String) {
+        viewModelScope.launch { playbackController.stop(itemKey) }
         playbackController.release()
     }
 }

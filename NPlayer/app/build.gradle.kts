@@ -100,32 +100,17 @@ dependencies {
     implementation(libs.androidx.media3.exoplayer.dash)
     implementation(libs.androidx.media3.ui)
     implementation(libs.androidx.media3.session)
-    implementation(libs.androidx.media3.datasource.okhttp)
 
     // Persistence
-    implementation(libs.androidx.room.runtime)
-    implementation(libs.androidx.room.ktx)
-    ksp(libs.androidx.room.compiler)
     implementation(libs.androidx.datastore.preferences)
-
-    // Background work
-    implementation(libs.androidx.work.runtime.ktx)
-    implementation(libs.androidx.hilt.work)
-    ksp(libs.androidx.hilt.compiler)
 
     // Security / casting
     implementation(libs.androidx.biometric)
     implementation(libs.androidx.fragment.ktx)
-    implementation(libs.androidx.mediarouter)
-    implementation(libs.google.material)
 
-    // Network
-    implementation(libs.com.squareup.okhttp)
-    implementation(libs.com.squareup.okhttp.logging)
-    implementation(libs.com.squareup.retrofit)
-    implementation(libs.com.squareup.retrofit.gson)
-    implementation(libs.com.google.code.gson)
+    // Images (device thumbnails via content:// URIs)
     implementation(libs.io.coil.compose)
+    implementation(libs.io.coil.video)
 
     // DI
     implementation(libs.com.google.dagger.hilt.android)

@@ -27,7 +27,7 @@ import androidx.media3.ui.PlayerView
 @UnstableApi
 @Composable
 fun PlayerScreen(
-    itemId: String,
+    itemKey: String,
     onBack: () -> Unit,
     viewModel: PlayerViewModel = hiltViewModel(),
 ) {
@@ -35,8 +35,8 @@ fun PlayerScreen(
     var controller by remember { mutableStateOf<MediaController?>(null) }
 
     DisposableEffect(Unit) {
-        viewModel.onEnter(itemId)
-        onDispose { viewModel.onLeave(itemId) }
+        viewModel.onEnter(itemKey)
+        onDispose { viewModel.onLeave(itemKey) }
     }
 
     Box(Modifier.fillMaxSize()) {

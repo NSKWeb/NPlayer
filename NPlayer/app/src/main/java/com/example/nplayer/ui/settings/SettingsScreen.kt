@@ -7,6 +7,8 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BrightnessAuto
 import androidx.compose.material.icons.filled.DarkMode
@@ -14,7 +16,6 @@ import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.SegmentedButton
 import androidx.compose.material3.SegmentedButtonDefaults
 import androidx.compose.material3.SingleChoiceSegmentedButtonRow
@@ -33,26 +34,14 @@ import com.example.nplayer.R
 import com.example.nplayer.data.prefs.ThemeMode
 
 @Composable
-fun SettingsScreen(
-    onSignOut: () -> Unit,
-    viewModel: SettingsViewModel = hiltViewModel(),
-) {
+fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {
     val state by viewModel.state.collectAsStateWithLifecycle()
 
-    Column(Modifier.padding(16.dp)) {
-        Text("Account", style = MaterialTheme.typography.titleMedium)
-        Spacer(Modifier.height(8.dp))
-        Text("Signed in as ${state.userName ?: "—"}", style = MaterialTheme.typography.bodyMedium)
-        Text(
-            state.serverUrl ?: "No server",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-
-        Spacer(Modifier.height(16.dp))
-        HorizontalDivider()
-
-        Spacer(Modifier.height(16.dp))
+    Column(
+        Modifier
+            .padding(16.dp)
+            .verticalScroll(rememberScrollState()),
+    ) {
         Text(stringResource(R.string.appearance), style = MaterialTheme.typography.titleMedium)
         Spacer(Modifier.height(8.dp))
         Text(stringResource(R.string.theme_title), style = MaterialTheme.typography.bodyLarge)
@@ -76,10 +65,10 @@ fun SettingsScreen(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween,
         ) {
-            Column {
-                Text("Biometric lock", style = MaterialTheme.typography.bodyLarge)
+            Column(Modifier.weight(1f)) {
+                Text(stringResource(R.string.biometric_title), style = MaterialTheme.typography.bodyLarge)
                 Text(
-                    "Require unlock to open the app",
+                    stringResource(R.string.biometric_subtitle),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
@@ -90,10 +79,23 @@ fun SettingsScreen(
             )
         }
 
-        Spacer(Modifier.height(24.dp))
-        OutlinedButton(onClick = { viewModel.signOut(onSignOut) }) {
-            Text("Sign out")
-        }
+        Spacer(Modifier.height(16.dp))
+        HorizontalDivider()
+
+        Spacer(Modifier.height(16.dp))
+        Text(stringResource(R.string.about_title), style = MaterialTheme.typography.titleMedium)
+        Spacer(Modifier.height(8.dp))
+        Text(
+            stringResource(R.string.about_body),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Spacer(Modifier.height(8.dp))
+        Text(
+            stringResource(R.string.about_version),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
     }
 }
 

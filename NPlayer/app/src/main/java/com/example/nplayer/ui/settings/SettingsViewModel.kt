@@ -2,9 +2,8 @@ package com.example.nplayer.ui.settings
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.nplayer.data.prefs.SessionStore
+import com.example.nplayer.data.prefs.AppSettingsStore
 import com.example.nplayer.data.prefs.ThemeMode
-import com.example.nplayer.data.repository.AuthRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -14,41 +13,31 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 data class SettingsUiState(
-    val serverUrl: String? = null,
-    val userName: String? = null,
     val biometricLock: Boolean = false,
     val themeMode: ThemeMode = ThemeMode.SYSTEM,
+    val favouriteCount: Int = 0,
 )
 
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
-    private val authRepository: AuthRepository,
-    private val sessionStore: SessionStore,
+    private val settingsStore: AppSettingsStore,
 ) : ViewModel() {
 
-    val state: StateFlow<SettingsUiState> = sessionStore.session
+    val state: StateFlow<SettingsUiState> = settingsStore.settings
         .map {
             SettingsUiState(
-                serverUrl = it.serverUrl,
-                userName = it.userName,
                 biometricLock = it.biometricLockEnabled,
                 themeMode = it.themeMode,
+                favouriteCount = it.favourites.size,
             )
         }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), SettingsUiState())
 
     fun setBiometricLock(enabled: Boolean) {
-        viewModelScope.launch { sessionStore.setBiometricLock(enabled) }
+        viewModelScope.launch { settingsStore.setBiometricLock(enabled) }
     }
 
     fun setThemeMode(mode: ThemeMode) {
-        viewModelScope.launch { sessionStore.setThemeMode(mode) }
-    }
-
-    fun signOut(onDone: () -> Unit) {
-        viewModelScope.launch {
-            authRepository.logout()
-            onDone()
-        }
+        viewModelScope.launch { settingsStore.setThemeMode(mode) }
     }
 }
