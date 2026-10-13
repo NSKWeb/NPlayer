@@ -43,9 +43,14 @@ across your devices. It ships no content and talks only to the server URL you en
 
 <img src="docs/qr-apk.svg" alt="QR code linking to the latest N Player APK download" width="180">
 
-**Scan to download the latest APK**
+**Scan to download · or open [nskweb.github.io/NPlayer](https://nskweb.github.io/NPlayer/) on the phone**
 
 </div>
+
+> [!TIP]
+> **The one-tap page is the easiest route.** [nskweb.github.io/NPlayer](https://nskweb.github.io/NPlayer/)
+> is a single button that downloads the newest APK, with the install steps and the
+> common warnings answered inline. No account, no store, no file hunting.
 
 | Route | How |
 |---|---|
