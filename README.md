@@ -219,19 +219,32 @@ native to the device without a theme picker.
   rejected rather than silently allowed.
 - **Credentials stay on device.** Only the server-issued token is stored, in DataStore.
 
+## Repository layout
+
+```
+.
+├── NPlayer/            Gradle project — open this in Android Studio
+│   └── app/src/        Kotlin sources, Compose UI, resources
+├── docs/               SVG diagrams used by this README
+└── LICENSE
+```
+
 ## Build
 
 Requirements: JDK 17 or newer (CI uses 21), Android SDK with platform 35 and build-tools 35.
 
+The Gradle project lives in `NPlayer/`, so build from there:
+
 ```bash
 export ANDROID_HOME=/path/to/android-sdk
+cd NPlayer
 
 ./gradlew :app:assembleDebug        # debug APK
 ./gradlew :app:testDebugUnitTest    # unit tests
 ./gradlew :app:assembleRelease      # minified release APK
 ```
 
-Debug output lands at `app/build/outputs/apk/debug/app-debug.apk`.
+Debug output lands at `NPlayer/app/build/outputs/apk/debug/app-debug.apk`.
 
 CI builds and tests on every push and pull request, and uploads the test report and
 APK as artifacts.
