@@ -1,50 +1,51 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 660" width="320" height="660" role="img" aria-labelledby="t d">
   <title id="t">N Player detail screen</title>
-  <desc id="d">Detail screen: a widescreen backdrop with a back button, the title, year and runtime, a Play button with a favourite toggle, and the synopsis.</desc>
+  <desc id="d">Detail screen: a 16:9 video frame with a back button, the title, file metadata, a Resume button and a filled favourite heart, and a note that the file resumes at a saved timestamp.</desc>
   <defs>
     <clipPath id="scr"><rect x="16" y="16" width="288" height="628" rx="28"/></clipPath>
-    <linearGradient id="p1" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#3E5C86"/><stop offset="100%" stop-color="#1B2740"/></linearGradient>
-    <linearGradient id="p2" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#5A3E6E"/><stop offset="100%" stop-color="#241B33"/></linearGradient>
-    <linearGradient id="p3" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#2F6B63"/><stop offset="100%" stop-color="#152E2B"/></linearGradient>
-    <linearGradient id="p4" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#7A4A32"/><stop offset="100%" stop-color="#2C1D15"/></linearGradient>
     <linearGradient id="back" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#31507C"/><stop offset="60%" stop-color="#1A2740"/><stop offset="100%" stop-color="#0C0D12"/></linearGradient>
     <linearGradient id="still" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#22334F"/><stop offset="50%" stop-color="#141B2A"/><stop offset="100%" stop-color="#0A0C11"/></linearGradient>
-    
   </defs>
 
   <rect width="320" height="660" fill="#08080B"/>
   <rect x="6" y="6" width="308" height="648" rx="34" fill="#15161E" stroke="#2C3546" stroke-width="2"/>
   <rect x="16" y="16" width="288" height="628" rx="28" fill="#0C0D12"/>
   <g clip-path="url(#scr)">
-    <rect x="16" y="16" width="288" height="168" fill="url(#back)"/>
-    <rect x="16" y="16" width="288" height="168" fill="#0C0D12" opacity="0.18"/>
+    <rect x="16" y="16" width="288" height="162" fill="url(#back)"/>
+    <path d="M104,97 L104,113 L124,105 Z" fill="#E8ECF3" opacity="0.92"/>
     <circle cx="44" cy="48" r="16" fill="#0C0D12" opacity="0.62"/>
     <path d="M48,42 L40,48 L48,54" fill="none" stroke="#E8ECF3" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
-    <text x="28" y="222" font-family="ui-sans-serif, system-ui, sans-serif" font-size="18" font-weight="700" fill="#E8ECF3">Dune: Part Two</text>
-    <text x="28" y="244" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" fill="#8B98AE">2024  •  2h 46m  •  Sci-Fi</text>
-    <rect x="28" y="262" width="112" height="42" rx="21" fill="#9ECAFF"/>
-    <path d="M58,274 L58,292 L72,283 Z" fill="#0B0B0F"/>
-    <text x="80" y="288" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12.5" font-weight="700" fill="#0B0B0F">Play</text>
-    <circle cx="164" cy="283" r="21" fill="none" stroke="#4A5568" stroke-width="1.5"/>
-    <path d="M164,290 L164,283 L157,283 L157,276 L164,276 L164,269 L171,276 L164,276" fill="none" stroke="#9ECAFF" stroke-width="0"/>
-    <path d="M164,274 C161,271 156,272 156,277 C156,282 164,287 164,287 C164,287 172,282 172,277 C172,272 167,271 164,274 Z" fill="none" stroke="#9ECAFF" stroke-width="2"/>
-    <text x="28" y="336" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10.5" fill="#8B98AE">Paul Atreides unites with Chani and the</text>
-    <text x="28" y="354" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10.5" fill="#8B98AE">Fremen while seeking revenge against the</text>
-    <text x="28" y="372" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10.5" fill="#8B98AE">conspirators who destroyed his family.</text>
-    <text x="28" y="390" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10.5" fill="#8B98AE">Facing a choice between the love of his</text>
-    <text x="28" y="408" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10.5" fill="#8B98AE">life and the fate of the known universe.</text>
-    <text x="28" y="426" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" font-weight="700" fill="#E8ECF3">Resume from 1:12:04</text>
-    <rect x="28" y="440" width="264" height="5" rx="2.5" fill="#1C1C24"/>
-    <rect x="28" y="440" width="156" height="5" rx="2.5" fill="#9ECAFF"/>
+    <rect x="234" y="154" width="58" height="16" rx="8" fill="#0B0B0F" opacity="0.7"/>
+    <text x="263" y="166" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="9.5" fill="#E8ECF3">1:12:04</text>
+
+    <text x="28" y="214" font-family="ui-sans-serif, system-ui, sans-serif" font-size="18" font-weight="700" fill="#E8ECF3">Trip 2024</text>
+    <text x="28" y="236" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" fill="#8B98AE">1h 12m  •  1920x1080  •  3.4 GB</text>
+
+    <text x="28" y="266" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10.5" fill="#9ECAFF">Resumes at 24:18</text>
+
+    <rect x="28" y="286" width="132" height="42" rx="21" fill="#9ECAFF"/>
+    <path d="M50,297 L50,317 L66,307 Z" fill="#0B0B0F"/>
+    <text x="76" y="312" font-family="ui-sans-serif, system-ui, sans-serif" font-size="12.5" font-weight="700" fill="#0B0B0F">Resume</text>
+
+    <circle cx="196" cy="307" r="21" fill="none" stroke="#4A5568" stroke-width="1.5"/>
+    <path d="M196,298 C193,295 188,296 188,301 C188,306 196,311 196,311 C196,311 204,306 204,301 C204,296 199,295 196,298 Z" fill="#9ECAFF" stroke="#9ECAFF" stroke-width="2" stroke-linejoin="round"/>
+
+    <line x1="28" y1="356" x2="292" y2="356" stroke="#2E3646" stroke-width="1"/>
+
+    <text x="28" y="386" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" fill="#8B98AE">On this device</text>
+    <text x="28" y="408" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" fill="#E8ECF3">Videos / Trip 2024.mp4</text>
+    <text x="28" y="430" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" fill="#E8ECF3">Added 3 days ago</text>
+    <text x="28" y="452" font-family="ui-sans-serif, system-ui, sans-serif" font-size="11" fill="#E8ECF3">Played as stored — no conversion</text>
+
     <rect x="16" y="560" width="288" height="84" fill="#121218"/>
     <line x1="16" y1="560" x2="304" y2="560" stroke="#20232C" stroke-width="1"/>
-    <path d="M43.0,593 L43.0,584 L52.0,576 L61.0,584 L61.0,593 Z" fill="#9ECAFF"/>
-    <text x="52.0" y="610" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10" font-weight="600" fill="#9ECAFF">Home</text>
-    <circle cx="123.0" cy="584" r="6.5" fill="none" stroke="#4A5568" stroke-width="2"/><line x1="127.6" y1="588.4" x2="132.0" y2="593" stroke="#4A5568" stroke-width="2" stroke-linecap="round"/>
-    <text x="124.0" y="610" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10" font-weight="600" fill="#4A5568">Search</text>
-    <line x1="196.0" y1="577" x2="196.0" y2="587" stroke="#4A5568" stroke-width="2" stroke-linecap="round"/><path d="M192.0,584 L196.0,588.5 L200.0,584 Z" fill="#4A5568"/><line x1="188.0" y1="593" x2="204.0" y2="593" stroke="#4A5568" stroke-width="2" stroke-linecap="round"/>
-    <text x="196.0" y="610" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10" font-weight="600" fill="#4A5568">Downloads</text>
-    <circle cx="268.0" cy="586" r="6.2" fill="none" stroke="#4A5568" stroke-width="2.2"/><circle cx="268.0" cy="586" r="2" fill="#4A5568"/><line x1="268.0" y1="580.4" x2="268.0" y2="577" stroke="#4A5568" stroke-width="2.2" stroke-linecap="round"/><line x1="268.0" y1="591.6" x2="268.0" y2="595" stroke="#4A5568" stroke-width="2.2" stroke-linecap="round"/><line x1="262.4" y1="586.0" x2="259.0" y2="586" stroke="#4A5568" stroke-width="2.2" stroke-linecap="round"/><line x1="273.6" y1="586.0" x2="277.0" y2="586" stroke="#4A5568" stroke-width="2.2" stroke-linecap="round"/>
-    <text x="268.0" y="610" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10" font-weight="600" fill="#4A5568">Settings</text>
+    <path d="M40.0,593 L40.0,584 L49.0,576 L58.0,584 L58.0,593 Z" fill="#9ECAFF"/>
+    <text x="49.0" y="610" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10" font-weight="600" fill="#9ECAFF">Home</text>
+    <circle cx="120.0" cy="584" r="6.5" fill="none" stroke="#4A5568" stroke-width="2"/><line x1="124.6" y1="588.4" x2="129.0" y2="593" stroke="#4A5568" stroke-width="2" stroke-linecap="round"/>
+    <text x="121.0" y="610" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10" font-weight="600" fill="#4A5568">Search</text>
+    <path d="M193,586 C190,583 185,584 185,589 C185,594 193,599 193,599 C193,599 201,594 201,589 C201,584 196,583 193,586 Z" fill="none" stroke="#4A5568" stroke-width="2"/>
+    <text x="193.0" y="610" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10" font-weight="600" fill="#4A5568">Favourites</text>
+    <circle cx="265.0" cy="586" r="6.2" fill="none" stroke="#4A5568" stroke-width="2.2"/><circle cx="265.0" cy="586" r="2" fill="#4A5568"/><line x1="265.0" y1="580.4" x2="265.0" y2="577" stroke="#4A5568" stroke-width="2.2" stroke-linecap="round"/><line x1="265.0" y1="591.6" x2="265.0" y2="595" stroke="#4A5568" stroke-width="2.2" stroke-linecap="round"/><line x1="259.4" y1="586.0" x2="256.0" y2="586" stroke="#4A5568" stroke-width="2.2" stroke-linecap="round"/><line x1="270.6" y1="586.0" x2="274.0" y2="586" stroke="#4A5568" stroke-width="2.2" stroke-linecap="round"/>
+    <text x="265.0" y="610" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10" font-weight="600" fill="#4A5568">Settings</text>
   </g>
 </svg>

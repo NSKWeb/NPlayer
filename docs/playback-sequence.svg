@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 920 780" width="920" height="780" role="img" aria-labelledby="title desc" font-family="ui-sans-serif, system-ui, 'Segoe UI', Roboto, sans-serif">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 920 760" width="920" height="760" role="img" aria-labelledby="title desc" font-family="ui-sans-serif, system-ui, 'Segoe UI', Roboto, sans-serif">
   <title id="title">Playback sequence</title>
-  <desc id="desc">Sequence diagram of starting playback: the UI asks the ViewModel, which connects to the media session, resolves a stream URL, restores resume position, starts playback, then reports progress to Jellyfin on a loop.</desc>
+  <desc id="desc">Sequence diagram of starting playback: the player asks the controller to play, the controller restores the saved position, sets the media item on the session, ExoPlayer reads the content URI through DefaultDataSource, and a loop saves the position every five seconds. Nothing leaves the device.</desc>
 
   <defs>
     <linearGradient id="bg2" x1="0" y1="0" x2="0" y2="1">
@@ -13,103 +13,100 @@
     </marker>
     </defs>
 
-  <rect width="920" height="780" fill="url(#bg2)" />
+  <rect width="920" height="760" fill="url(#bg2)" />
 
-  <text x="36" y="42" fill="#F2F5FA" font-size="21" font-weight="700">Playback — from tap to Jellyfin progress</text>
-  <text x="36" y="63" fill="#A9B6CB" font-size="10px">Direct play is chosen for containers ExoPlayer handles; everything else is transcoded to HLS.</text>
+  <text x="36" y="42" fill="#F2F5FA" font-size="21" font-weight="700">Playback — from tap to resume position</text>
+  <text x="36" y="63" fill="#A9B6CB" font-size="10px">The file is played as it is stored. There is no transcode step and no server to report to.</text>
 
-  
+
   <g>
-    <rect x="30" y="86" width="140" height="52" fill="#1C1C24" stroke="#33405A" stroke-width="1.5" rx="9" />
+    <rect x="30" y="86" width="150" height="52" fill="#1C1C24" stroke="#33405A" stroke-width="1.5" rx="9" />
     <text x="44" y="108" fill="#DCE3EE" font-size="12px" font-weight="600">PlayerScreen</text>
     <text x="44" y="124" fill="#8C99AE" font-size="9.5px">Compose + PlayerView</text>
   </g>
   <g>
-    <rect x="206" y="86" width="150" height="52" fill="#1C1C24" stroke="#33405A" stroke-width="1.5" rx="9" />
-    <text x="220" y="108" fill="#DCE3EE" font-size="12px" font-weight="600">PlayerViewModel</text>
-    <text x="220" y="124" fill="#8C99AE" font-size="9.5px">lifecycle-scoped</text>
+    <rect x="212" y="86" width="150" height="52" fill="#1C1C24" stroke="#33405A" stroke-width="1.5" rx="9" />
+    <text x="226" y="108" fill="#DCE3EE" font-size="12px" font-weight="600">PlayerViewModel</text>
+    <text x="226" y="124" fill="#8C99AE" font-size="9.5px">lifecycle-scoped</text>
   </g>
   <g>
-    <rect x="392" y="86" width="168" height="52" fill="#1C1C24" stroke="#33405A" stroke-width="1.5" rx="9" />
-    <text x="406" y="108" fill="#DCE3EE" font-size="12px" font-weight="600">PlaybackController</text>
-    <text x="406" y="124" fill="#8C99AE" font-size="9.5px">MediaController + streams</text>
+    <rect x="394" y="86" width="160" height="52" fill="#1C1C24" stroke="#33405A" stroke-width="1.5" rx="9" />
+    <text x="408" y="108" fill="#DCE3EE" font-size="12px" font-weight="600">PlaybackController</text>
+    <text x="408" y="124" fill="#8C99AE" font-size="9.5px">MediaController</text>
   </g>
   <g>
-    <rect x="596" y="86" width="150" height="52" fill="#1C1C24" stroke="#33405A" stroke-width="1.5" rx="9" />
-    <text x="610" y="108" fill="#DCE3EE" font-size="12px" font-weight="600">PlaybackService</text>
-    <text x="610" y="124" fill="#8C99AE" font-size="9.5px">ExoPlayer + session</text>
+    <rect x="586" y="86" width="150" height="52" fill="#1C1C24" stroke="#33405A" stroke-width="1.5" rx="9" />
+    <text x="600" y="108" fill="#DCE3EE" font-size="12px" font-weight="600">PlaybackService</text>
+    <text x="600" y="124" fill="#8C99AE" font-size="9.5px">ExoPlayer + session</text>
   </g>
   <g>
-    <rect x="782" y="86" width="108" height="52" fill="#1C1C24" stroke="#33405A" stroke-width="1.5" rx="9" />
-    <text x="796" y="108" fill="#DCE3EE" font-size="12px" font-weight="600">Jellyfin</text>
-    <text x="796" y="124" fill="#8C99AE" font-size="9.5px">your server</text>
+    <rect x="768" y="86" width="122" height="52" fill="#152218" stroke="#2E5B3A" stroke-width="1.5" rx="9" />
+    <text x="782" y="108" fill="#DCE3EE" font-size="12px" font-weight="600">DataStore</text>
+    <text x="782" y="124" fill="#8C99AE" font-size="9.5px">resume positions</text>
   </g>
 
-  
-  <line x1="100" y1="138" x2="100" y2="720" stroke="#2C3546" stroke-width="1.3" stroke-dasharray="4 5" />
-  <line x1="281" y1="138" x2="281" y2="720" stroke="#2C3546" stroke-width="1.3" stroke-dasharray="4 5" />
-  <line x1="476" y1="138" x2="476" y2="720" stroke="#2C3546" stroke-width="1.3" stroke-dasharray="4 5" />
-  <line x1="671" y1="138" x2="671" y2="720" stroke="#2C3546" stroke-width="1.3" stroke-dasharray="4 5" />
-  <line x1="836" y1="138" x2="836" y2="720" stroke="#2C3546" stroke-width="1.3" stroke-dasharray="4 5" />
 
-  <text x="30" y="164" fill="#6E7A90" font-size="10px" font-weight="700" letter-spacing=".08em">PHASE 1 — RESOLVE</text>
+  <line x1="105" y1="138" x2="105" y2="700" stroke="#2C3546" stroke-width="1.3" stroke-dasharray="4 5" />
+  <line x1="287" y1="138" x2="287" y2="700" stroke="#2C3546" stroke-width="1.3" stroke-dasharray="4 5" />
+  <line x1="474" y1="138" x2="474" y2="700" stroke="#2C3546" stroke-width="1.3" stroke-dasharray="4 5" />
+  <line x1="661" y1="138" x2="661" y2="700" stroke="#2C3546" stroke-width="1.3" stroke-dasharray="4 5" />
+  <line x1="829" y1="138" x2="829" y2="700" stroke="#2C3546" stroke-width="1.3" stroke-dasharray="4 5" />
 
-  
-  <text x="104" y="188" fill="#9ECAFF" font-size="10px" font-weight="700">1</text>
-  <line x1="100" y1="196" x2="281" y2="196" stroke="#7C8BA3" stroke-width="1.6" fill="none" marker-end="url(#ar2)" />
-  <text x="112" y="192" fill="#E8ECF3" font-size="11px">onEnter(itemId)</text>
+  <text x="30" y="164" fill="#6E7A90" font-size="10px" font-weight="700" letter-spacing=".08em">PHASE 1 — CONNECT</text>
 
-  <text x="285" y="222" fill="#9ECAFF" font-size="10px" font-weight="700">2</text>
-  <line x1="281" y1="230" x2="476" y2="230" stroke="#7C8BA3" stroke-width="1.6" fill="none" marker-end="url(#ar2)" />
-  <text x="293" y="226" fill="#E8ECF3" font-size="11px">connect() → MediaController binds to PlaybackService</text>
 
-  <line x1="476" y1="252" x2="671" y2="252" stroke="#7C8BA3" stroke-width="1.6" fill="none" marker-end="url(#ar2)" />
-  <text x="488" y="248" fill="#E8ECF3" font-size="11px">SessionToken → onGetSession()</text>
+  <text x="109" y="188" fill="#9ECAFF" font-size="10px" font-weight="700">1</text>
+  <line x1="105" y1="196" x2="287" y2="196" stroke="#7C8BA3" stroke-width="1.6" fill="none" marker-end="url(#ar2)" />
+  <text x="117" y="192" fill="#E8ECF3" font-size="11px">onEnter(itemKey)</text>
 
-  <text x="285" y="278" fill="#9ECAFF" font-size="10px" font-weight="700">3</text>
-  <line x1="281" y1="286" x2="836" y2="286" stroke="#7C8BA3" stroke-width="1.6" fill="none" marker-end="url(#ar2)" />
-  <text x="297" y="282" fill="#E8ECF3" font-size="11px">GET Users/{id}/Items/{itemId} — full DTO with MediaSources</text>
+  <text x="291" y="222" fill="#9ECAFF" font-size="10px" font-weight="700">2</text>
+  <line x1="287" y1="230" x2="474" y2="230" stroke="#7C8BA3" stroke-width="1.6" fill="none" marker-end="url(#ar2)" />
+  <text x="299" y="226" fill="#E8ECF3" font-size="11px">connect() → MediaController binds to PlaybackService</text>
 
-  <line x1="836" y1="308" x2="281" y2="308" stroke="#5C6A80" stroke-width="1.4" fill="none" stroke-dasharray="5 4" marker-end="url(#ar2)" />
-  <text x="470" y="304" fill="#E8ECF3" font-size="11px">BaseItemDto</text>
+  <line x1="474" y1="252" x2="661" y2="252" stroke="#7C8BA3" stroke-width="1.6" fill="none" marker-end="url(#ar2)" />
+  <text x="486" y="248" fill="#E8ECF3" font-size="11px">SessionToken → onGetSession()</text>
 
-  <text x="30" y="338" fill="#6E7A90" font-size="10px" font-weight="700" letter-spacing=".08em">PHASE 2 — START</text>
+  <line x1="661" y1="274" x2="474" y2="274" stroke="#5C6A80" stroke-width="1.4" fill="none" stroke-dasharray="5 4" marker-end="url(#ar2)" />
+  <text x="500" y="270" fill="#E8ECF3" font-size="11px">MediaController returned to the UI</text>
 
-  
-  <text x="285" y="360" fill="#9ECAFF" font-size="10px" font-weight="700">4</text>
-  <line x1="281" y1="368" x2="476" y2="368" stroke="#7C8BA3" stroke-width="1.6" fill="none" marker-end="url(#ar2)" />
-  <text x="293" y="364" fill="#E8ECF3" font-size="11px">play(item)</text>
+  <text x="30" y="304" fill="#6E7A90" font-size="10px" font-weight="700" letter-spacing=".08em">PHASE 2 — START</text>
 
-  <rect x="300" y="380" width="360" height="66" fill="#151b26" stroke="#2E3B52" stroke-width="1" rx="6" />
-  <text x="312" y="398" fill="#A9B6CB" font-size="10px">StreamUrls.streamUrl(server, token, itemId, mediaSource)</text>
-  <text x="312" y="415" fill="#A9B6CB" font-size="10px">mp4 / mkv / webm / audio → /Videos/{id}/stream (static)</text>
-  <text x="312" y="432" fill="#A9B6CB" font-size="10px">otherwise → /Videos/{id}/master.m3u8  (HLS transcode)</text>
 
-  <text x="285" y="470" fill="#9ECAFF" font-size="10px" font-weight="700">5</text>
-  <line x1="476" y1="478" x2="100" y2="478" stroke="#5C6A80" stroke-width="1.4" fill="none" stroke-dasharray="5 4" marker-end="url(#ar2)" />
-  <text x="300" y="474" fill="#E8ECF3" font-size="11px">positionStore.position(itemId) → resume millis (DataStore)</text>
+  <text x="109" y="326" fill="#9ECAFF" font-size="10px" font-weight="700">3</text>
+  <line x1="105" y1="334" x2="287" y2="334" stroke="#7C8BA3" stroke-width="1.6" fill="none" marker-end="url(#ar2)" />
+  <text x="117" y="330" fill="#E8ECF3" font-size="11px">play(item)</text>
 
-  <text x="285" y="506" fill="#9ECAFF" font-size="10px" font-weight="700">6</text>
-  <line x1="281" y1="514" x2="671" y2="514" stroke="#7C8BA3" stroke-width="1.6" fill="none" marker-end="url(#ar2)" />
-  <text x="297" y="510" fill="#E8ECF3" font-size="11px">setMediaItem(item, startPosition) · prepare() · play()</text>
+  <text x="291" y="360" fill="#9ECAFF" font-size="10px" font-weight="700">4</text>
+  <line x1="474" y1="368" x2="829" y2="368" stroke="#7C8BA3" stroke-width="1.6" fill="none" marker-end="url(#ar2)" />
+  <text x="486" y="364" fill="#E8ECF3" font-size="11px">positionStore.position(item.key) → resume millis</text>
 
-  <rect x="300" y="528" width="360" height="44" fill="#151b26" stroke="#2E3B52" stroke-width="1" rx="6" />
-  <text x="312" y="546" fill="#A9B6CB" font-size="10px">PlaybackService feeds ExoPlayer through OkHttpDataSource,</text>
-  <text x="312" y="562" fill="#A9B6CB" font-size="10px">so auth headers apply to media bytes too.</text>
+  <line x1="829" y1="390" x2="474" y2="390" stroke="#5C6A80" stroke-width="1.4" fill="none" stroke-dasharray="5 4" marker-end="url(#ar2)" />
+  <text x="520" y="386" fill="#E8ECF3" font-size="11px">saved position (or 0)</text>
 
-  <text x="30" y="600" fill="#6E7A90" font-size="10px" font-weight="700" letter-spacing=".08em">PHASE 3 — REPORT (loops every 10 s)</text>
+  <text x="291" y="416" fill="#9ECAFF" font-size="10px" font-weight="700">5</text>
+  <line x1="474" y1="424" x2="661" y2="424" stroke="#7C8BA3" stroke-width="1.6" fill="none" marker-end="url(#ar2)" />
+  <text x="486" y="420" fill="#E8ECF3" font-size="11px">setMediaItem(item, startPosition) · prepare() · play()</text>
 
-  <text x="479" y="622" fill="#9ECAFF" font-size="10px" font-weight="700">7</text>
-  <line x1="476" y1="630" x2="836" y2="630" stroke="#7C8BA3" stroke-width="1.6" fill="none" marker-end="url(#ar2)" />
-  <text x="492" y="626" fill="#E8ECF3" font-size="11px">POST Sessions/Playing  — playback started</text>
+  <rect x="300" y="440" width="380" height="66" fill="#151b26" stroke="#2E3B52" stroke-width="1" rx="6" />
+  <text x="312" y="458" fill="#A9B6CB" font-size="10px">MediaItem URI = content://media/external/video/media/123</text>
+  <text x="312" y="475" fill="#A9B6CB" font-size="10px">ExoPlayer reads it through DefaultDataSource —</text>
+  <text x="312" y="492" fill="#A9B6CB" font-size="10px">a local file descriptor, no HTTP and no headers.</text>
 
-  <path d="M 476 656 C 560 656, 560 676, 476 676" stroke="#5C6A80" stroke-width="1.4" fill="none" marker-end="url(#ar2)" />
-  <text x="566" y="652" fill="#E8ECF3" font-size="11px">every 10 s: currentPosition →</text>
-  <text x="566" y="668" fill="#E8ECF3" font-size="11px">positionStore.save + reportPlaybackProgress</text>
+  <text x="30" y="536" fill="#6E7A90" font-size="10px" font-weight="700" letter-spacing=".08em">PHASE 3 — SAVE (loops every 5 s, on device)</text>
 
-  <line x1="476" y1="700" x2="836" y2="700" stroke="#7C8BA3" stroke-width="1.6" fill="none" marker-end="url(#ar2)" />
-  <text x="492" y="696" fill="#E8ECF3" font-size="11px">POST Sessions/Playing/Progress — ticks + isPaused</text>
+  <path d="M 474 558 C 560 558, 560 578, 474 578" stroke="#5C6A80" stroke-width="1.4" fill="none" marker-end="url(#ar2)" />
+  <text x="566" y="554" fill="#E8ECF3" font-size="11px">every 5 s: controller.currentPosition →</text>
+  <text x="566" y="570" fill="#E8ECF3" font-size="11px">positionStore.save(item.key, position)</text>
 
-  <line x1="476" y1="726" x2="836" y2="726" stroke="#5C6A80" stroke-width="1.4" fill="none" stroke-dasharray="5 4" marker-end="url(#ar2)" />
-  <text x="492" y="722" fill="#E8ECF3" font-size="11px">POST Sessions/Playing/Stopped on leave — final position</text>
+  <text x="479" y="606" fill="#9ECAFF" font-size="10px" font-weight="700">6</text>
+  <line x1="474" y1="614" x2="829" y2="614" stroke="#7C8BA3" stroke-width="1.6" fill="none" marker-end="url(#ar2)" />
+  <text x="490" y="610" fill="#E8ECF3" font-size="11px">save(item.key, currentPosition)</text>
+
+  <text x="479" y="646" fill="#9ECAFF" font-size="10px" font-weight="700">7</text>
+  <line x1="474" y1="654" x2="829" y2="654" stroke="#5C6A80" stroke-width="1.4" fill="none" stroke-dasharray="5 4" marker-end="url(#ar2)" />
+  <text x="490" y="650" fill="#E8ECF3" font-size="11px">on leave: stop(item.key) saves the final position</text>
+
+  <rect x="300" y="676" width="560" height="52" fill="#152218" stroke="#2E5B3A" stroke-width="1" rx="6" />
+  <text x="312" y="696" fill="#DCE3EE" font-size="11px" font-weight="600">Nothing leaves the device.</text>
+  <text x="312" y="714" fill="#93A0B5" font-size="10px">No progress is reported anywhere: the app has no network permission to report with.</text>
 </svg>

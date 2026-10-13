@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 900" width="900" height="900" role="img" aria-labelledby="title desc" font-family="ui-sans-serif, system-ui, 'Segoe UI', Roboto, sans-serif">
   <title id="title">N Player layered architecture</title>
-  <desc id="desc">Layered architecture: Jetpack Compose UI over Hilt-injected ViewModels and repositories, a Retrofit/OkHttp network layer with interceptors, Room and DataStore persistence, and Media3 playback and download services, all talking to a user-operated Jellyfin server.</desc>
+  <desc id="desc">Layered architecture: Jetpack Compose UI over Hilt-injected ViewModels, an in-memory media library over a MediaStore repository, DataStore for preferences and resume positions, and a Media3 playback service reading content URIs. There is no network layer.</desc>
 
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
@@ -15,17 +15,17 @@
 
   <rect width="900" height="900" fill="url(#bg)" />
 
-  
-  <text x="40" y="44" fill="#F2F5FA" font-size="22" font-weight="700">N Player — Architecture</text>
-  <text x="40" y="66" fill="#6E7A90" font-size="10px">A native Android client. Every request goes to a Jellyfin server the user operates.</text>
 
-  
+  <text x="40" y="44" fill="#F2F5FA" font-size="22" font-weight="700">N Player — Architecture</text>
+  <text x="40" y="66" fill="#6E7A90" font-size="10px">A standalone Android player. Everything it reads is already on the device; there is no network layer.</text>
+
+
   <text x="40" y="104" fill="#9ECAFF" font-size="15px" font-weight="700" letter-spacing=".02em">UI — Jetpack Compose</text>
   <rect x="40" y="114" width="820" height="86" fill="#1C1C24" stroke="#2E3646" stroke-width="1.5" rx="10" />
   <g>
     <rect x="56" y="128" width="150" height="58" fill="#171d29" stroke="#2E3646" stroke-width="1.5" rx="10" />
     <text x="70" y="152" fill="#E8ECF3" font-size="13.5px" font-weight="600">MainActivity</text>
-    <text x="70" y="169" fill="#93A0B5" font-size="11px">FragmentActivity + edge-to-edge</text>
+    <text x="70" y="169" fill="#93A0B5" font-size="11px">edge-to-edge · theme</text>
   </g>
   <g>
     <rect x="220" y="128" width="150" height="58" fill="#171d29" stroke="#2E3646" stroke-width="1.5" rx="10" />
@@ -35,7 +35,7 @@
   <g>
     <rect x="384" y="128" width="210" height="58" fill="#171d29" stroke="#2E3646" stroke-width="1.5" rx="10" />
     <text x="398" y="152" fill="#E8ECF3" font-size="13.5px" font-weight="600">Screens</text>
-    <text x="398" y="169" fill="#93A0B5" font-size="11px">auth · home · detail · search</text>
+    <text x="398" y="169" fill="#93A0B5" font-size="11px">home · search · detail · player · favourites · settings</text>
   </g>
   <g>
     <rect x="608" y="128" width="236" height="58" fill="#171d29" stroke="#2E3646" stroke-width="1.5" rx="10" />
@@ -43,74 +43,69 @@
     <text x="622" y="169" fill="#93A0B5" font-size="11px">PosterCard · Material 3 · dynamic</text>
   </g>
 
-  
+
   <text x="40" y="238" fill="#9ECAFF" font-size="15px" font-weight="700" letter-spacing=".02em">Presentation state — Hilt ViewModels</text>
   <rect x="40" y="248" width="820" height="70" fill="#1C1C24" stroke="#2E3646" stroke-width="1.5" rx="10" />
   <text x="56" y="272" fill="#E8ECF3" font-size="13.5px" font-weight="600">StateFlow&lt;UiState&gt;</text>
-  <text x="56" y="291" fill="#93A0B5" font-size="11px">Auth · Home · Detail · Search · Downloads · Settings · Player — immutable state, one flow each</text>
+  <text x="56" y="291" fill="#93A0B5" font-size="11px">Home · Search · Detail · Player · Favourites · Settings — immutable state, one flow each</text>
   <text x="56" y="308" fill="#6E7A90" font-size="10px">Screens collect with collectAsStateWithLifecycle(); no state survives in the Activity</text>
 
-  
-  <text x="40" y="352" fill="#9ECAFF" font-size="15px" font-weight="700" letter-spacing=".02em">Domain — repositories</text>
+
+  <text x="40" y="352" fill="#9ECAFF" font-size="15px" font-weight="700" letter-spacing=".02em">Domain</text>
   <rect x="40" y="362" width="820" height="70" fill="#1C1C24" stroke="#2E3646" stroke-width="1.5" rx="10" />
   <g>
-    <rect x="56" y="376" width="240" height="42" fill="#171d29" stroke="#2E3646" stroke-width="1.5" rx="10" />
-    <text x="70" y="395" fill="#E8ECF3" font-size="13.5px" font-weight="600">AuthRepository</text>
-    <text x="70" y="410" fill="#93A0B5" font-size="11px">probe · login · logout</text>
+    <rect x="56" y="376" width="300" height="42" fill="#171d29" stroke="#2E3646" stroke-width="1.5" rx="10" />
+    <text x="70" y="395" fill="#E8ECF3" font-size="13.5px" font-weight="600">MediaLibrary</text>
+    <text x="70" y="410" fill="#93A0B5" font-size="11px">in-memory cache · videos · audio · search</text>
   </g>
   <g>
-    <rect x="310" y="376" width="240" height="42" fill="#171d29" stroke="#2E3646" stroke-width="1.5" rx="10" />
-    <text x="324" y="395" fill="#E8ECF3" font-size="13.5px" font-weight="600">LibraryRepository</text>
-    <text x="324" y="410" fill="#93A0B5" font-size="11px">views · items · search · favourite</text>
-  </g>
-  <g>
-    <rect x="564" y="376" width="280" height="42" fill="#171d29" stroke="#2E3646" stroke-width="1.5" rx="10" />
-    <text x="578" y="395" fill="#E8ECF3" font-size="13.5px" font-weight="600">apiCall { } → ApiResult</text>
-    <text x="578" y="410" fill="#93A0B5" font-size="11px">HTTP/IO → NETWORK · UNAUTHORIZED · SERVER</text>
+    <rect x="370" y="376" width="474" height="42" fill="#171d29" stroke="#2E3646" stroke-width="1.5" rx="10" />
+    <text x="384" y="395" fill="#E8ECF3" font-size="13.5px" font-weight="600">AppSettingsStore · PlaybackPositionStore</text>
+    <text x="384" y="410" fill="#93A0B5" font-size="11px">theme · biometric lock · favourites · per-item resume</text>
   </g>
 
-  
+
   <text x="40" y="466" fill="#9ECAFF" font-size="15px" font-weight="700" letter-spacing=".02em">Data</text>
-  <rect x="40" y="476" width="400" height="150" fill="#152218" stroke="#2E5B3A" stroke-width="1.5" rx="10" />
-  <text x="56" y="500" fill="#E8ECF3" font-size="13.5px" font-weight="600">Remote — Retrofit + OkHttp</text>
-  <text x="56" y="519" fill="#93A0B5" font-size="11px">JellyfinApi (relative paths only)</text>
-  <text x="56" y="538" fill="#6E7A90" font-size="10px">BaseUrlInterceptor  → rewrites host from session</text>
-  <text x="56" y="555" fill="#6E7A90" font-size="10px">AuthInterceptor    → X-Emby-Authorization + Token</text>
-  <text x="56" y="572" fill="#6E7A90" font-size="10px">JellyfinImageInterceptor → header for Coil loads</text>
-  <text x="56" y="596" fill="#93A0B5" font-size="11px">SessionStore supplies server URL, token, device id</text>
+  <rect x="40" y="476" width="400" height="150" fill="#171d29" stroke="#2E3646" stroke-width="1.5" rx="10" />
+  <text x="56" y="500" fill="#E8ECF3" font-size="13.5px" font-weight="600">MediaStore — the device's own media</text>
+  <text x="56" y="521" fill="#93A0B5" font-size="11px">MediaStoreRepository.scan()</text>
+  <text x="56" y="540" fill="#6E7A90" font-size="10px">MediaStore.Video → id, title, duration, size, size</text>
+  <text x="56" y="557" fill="#6E7A90" font-size="10px">MediaStore.Audio → title, album, artist</text>
+  <text x="56" y="580" fill="#93A0B5" font-size="11px">Each row becomes a content:// URI</text>
+  <text x="56" y="599" fill="#6E7A90" font-size="10px">Read-only. No network source exists.</text>
 
   <rect x="460" y="476" width="400" height="150" fill="#171d29" stroke="#2E3646" stroke-width="1.5" rx="10" />
-  <text x="476" y="500" fill="#E8ECF3" font-size="13.5px" font-weight="600">Local</text>
-  <text x="476" y="521" fill="#93A0B5" font-size="11px">Room — nplayer.db</text>
-  <text x="476" y="538" fill="#6E7A90" font-size="10px">items (cached library) · downloads (mirrored state)</text>
-  <text x="476" y="562" fill="#93A0B5" font-size="11px">DataStore</text>
-  <text x="476" y="579" fill="#6E7A90" font-size="10px">nplayer_session — server, token, user, biometric flag</text>
-  <text x="476" y="596" fill="#6E7A90" font-size="10px">nplayer_positions — per-item resume millis</text>
+  <text x="476" y="500" fill="#E8ECF3" font-size="13.5px" font-weight="600">DataStore</text>
+  <text x="476" y="521" fill="#93A0B5" font-size="11px">nplayer_settings</text>
+  <text x="476" y="538" fill="#6E7A90" font-size="10px">theme mode · biometric lock · favourites</text>
+  <text x="476" y="562" fill="#93A0B5" font-size="11px">nplayer_positions</text>
+  <text x="476" y="579" fill="#6E7A90" font-size="10px">per-item resume millis</text>
+  <text x="476" y="599" fill="#6E7A90" font-size="10px">No account, token, or server state is stored.</text>
 
-  
+
   <text x="40" y="650" fill="#9ECAFF" font-size="15px" font-weight="700" letter-spacing=".02em">Services</text>
   <rect x="40" y="660" width="400" height="96" fill="#1C1C24" stroke="#2E3646" stroke-width="1.5" rx="10" />
   <text x="56" y="684" fill="#E8ECF3" font-size="13.5px" font-weight="600">PlaybackService</text>
   <text x="56" y="702" fill="#93A0B5" font-size="11px">MediaSessionService owns ExoPlayer</text>
   <text x="56" y="719" fill="#6E7A90" font-size="10px">MediaSession → notification, lock screen, audio focus</text>
-  <text x="56" y="736" fill="#6E7A90" font-size="10px">PlaybackController reports progress to Jellyfin</text>
+  <text x="56" y="736" fill="#6E7A90" font-size="10px">DefaultDataSource reads the content:// URI</text>
 
   <rect x="460" y="660" width="400" height="96" fill="#1C1C24" stroke="#2E3646" stroke-width="1.5" rx="10" />
-  <text x="476" y="684" fill="#E8ECF3" font-size="13.5px" font-weight="600">NPlayerDownloadService + Sync</text>
-  <text x="476" y="702" fill="#93A0B5" font-size="11px">Media3 DownloadManager · SimpleCache</text>
-  <text x="476" y="719" fill="#6E7A90" font-size="10px">LibrarySyncWorker (WorkManager, every 12 h)</text>
-  <text x="476" y="736" fill="#6E7A90" font-size="10px">Downloads mirrored into Room for the UI</text>
+  <text x="476" y="684" fill="#E8ECF3" font-size="13.5px" font-weight="600">PlaybackController</text>
+  <text x="476" y="702" fill="#93A0B5" font-size="11px">MediaController bound to the session</text>
+  <text x="476" y="719" fill="#6E7A90" font-size="10px">restores the saved start position on play</text>
+  <text x="476" y="736" fill="#6E7A90" font-size="10px">saves the current position every 5 s, on device</text>
 
-  
+
   <line x1="450" y1="200" x2="450" y2="246" stroke="#5B6B85" stroke-width="1.6" fill="none" marker-end="url(#arrow)" />
   <line x1="450" y1="318" x2="450" y2="360" stroke="#5B6B85" stroke-width="1.6" fill="none" marker-end="url(#arrow)" />
   <line x1="450" y1="432" x2="450" y2="474" stroke="#5B6B85" stroke-width="1.6" fill="none" marker-end="url(#arrow)" />
   <line x1="240" y1="626" x2="240" y2="658" stroke="#5B6B85" stroke-width="1.6" fill="none" marker-end="url(#arrow)" />
   <line x1="660" y1="626" x2="660" y2="658" stroke="#5B6B85" stroke-width="1.6" fill="none" marker-end="url(#arrow)" />
 
-  
-  <rect x="300" y="790" width="300" height="70" fill="#152218" stroke="#2E5B3A" stroke-width="1.5" rx="10" />
-  <text x="316" y="816" fill="#E8ECF3" font-size="13.5px" font-weight="600">Jellyfin server</text>
-  <text x="316" y="835" fill="#93A0B5" font-size="11px">user-operated · no API key needed</text>
-  <line x1="450" y1="756" x2="450" y2="788" stroke="#5B6B85" stroke-width="1.6" fill="none" marker-end="url(#arrow)" />
+
+  <rect x="280" y="790" width="340" height="70" fill="#152218" stroke="#2E5B3A" stroke-width="1.5" rx="10" />
+  <text x="296" y="816" fill="#E8ECF3" font-size="13.5px" font-weight="600">Device storage</text>
+  <text x="296" y="835" fill="#93A0B5" font-size="11px">your video and audio files · read-only access</text>
+  <line x1="240" y1="756" x2="240" y2="788" stroke="#5B6B85" stroke-width="1.6" fill="none" marker-end="url(#arrow)" />
 </svg>

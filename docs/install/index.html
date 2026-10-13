@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Install N Player</title>
-<meta name="description" content="Install the N Player Android app — a Jellyfin client for the server you run yourself.">
+<meta name="description" content="Install the N Player Android app — a standalone player for the video and audio already on your phone. No account, no server.">
 <meta name="color-scheme" content="dark light">
 <style>
   :root {
@@ -70,7 +70,7 @@
 <body>
 <main>
   <h1>N Player</h1>
-  <p class="tagline">A Jellyfin client for the server you run yourself.</p>
+  <p class="tagline">Plays the video and audio already on your phone.</p>
 
   <div class="card">
     <a class="cta" id="download"
@@ -83,7 +83,7 @@
   <ol>
     <li>Tap <strong>Download</strong> above — the file lands in your Downloads.</li>
     <li>Open it, and allow your browser to <strong>install unknown apps</strong> when Android asks.</li>
-    <li>Install, then open N Player and sign in to your server.</li>
+    <li>Install, open N Player, and tap <strong>Allow access</strong> so it can read your media. That is the only setup step.</li>
   </ol>
 
   <details>
@@ -95,10 +95,20 @@
   </details>
 
   <details>
-    <summary>Where do I get a server URL?</summary>
-    <p>N Player is a client, not a service — it talks to a Jellyfin server you operate.
-    See <a href="https://github.com/NSKWeb/NPlayer#connecting-to-your-server">Connecting
-    to your server</a> for the address to use on a LAN, behind a proxy, or in Docker.</p>
+    <summary>Why does it ask for my media?</summary>
+    <p>N Player reads your video and audio from Android's own media library, so it needs
+    the read-media permission to list and play them. It is read-only: the app cannot
+    change or delete your files, and it has no network access at all. See
+    <a href="https://github.com/NSKWeb/NPlayer#the-media-permission">The media
+    permission</a> for the exact grants on each Android version.</p>
+  </details>
+
+  <details>
+    <summary>My files are not showing up</summary>
+    <p>N Player lists what Android's MediaStore knows about. If a file is missing, give
+    the system a moment to index it after copying it over, or tap <em>Scan again</em> on
+    the Home screen. Files in app-private folders that MediaStore does not expose will
+    not appear.</p>
   </details>
 
   <footer>

@@ -1,0 +1,89 @@
+<?xml version='1.0' encoding='utf-8'?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 900 660" width="900" height="660" role="img" aria-labelledby="title desc" font-family="ui-sans-serif, system-ui, 'Segoe UI', Roboto, sans-serif">
+  <title id="title">Media permission and library scan</title>
+  <desc id="desc">Flow: MainActivity hosts HomeScreen, which checks the media permission. If missing, it explains and re-requests. Once granted, MediaLibrary refreshes, MediaStoreRepository scans the device, and an in-memory list feeds every screen.</desc>
+
+  <defs>
+    <linearGradient id="bgp" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0B0B0F" />
+      <stop offset="100%" stop-color="#121218" />
+    </linearGradient>
+    <marker id="arp" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#7C8BA3" />
+    </marker>
+    </defs>
+
+  <rect width="900" height="660" fill="url(#bgp)" />
+
+  <text x="36" y="44" fill="#F2F5FA" font-size="21" font-weight="700">Media permission → library scan</text>
+  <text x="36" y="65" fill="#A9B6CB" font-size="10px">Nothing is scanned until the permission is granted. There is no fallback source, because there is no other source.</text>
+
+  <rect x="40" y="100" width="300" height="66" fill="#1C1C24" stroke="#33405A" stroke-width="1.5" rx="10" />
+  <text x="56" y="126" fill="#DCE3EE" font-size="13px" font-weight="600">MainActivity</text>
+  <text x="56" y="145" fill="#8C99AE" font-size="10.5px">edge-to-edge Compose host</text>
+
+  <line x1="340" y1="133" x2="378" y2="133" stroke="#7C8BA3" stroke-width="1.6" fill="none" marker-end="url(#arp)" />
+
+  <rect x="380" y="100" width="480" height="66" fill="#1C1C24" stroke="#33405A" stroke-width="1.5" rx="10" />
+  <text x="396" y="126" fill="#DCE3EE" font-size="13px" font-weight="600">HomeScreen — permission gate</text>
+  <text x="396" y="145" fill="#8C99AE" font-size="10.5px">requiredMediaPermissions() resolves the request for the running API level</text>
+
+  <line x1="480" y1="166" x2="480" y2="188" stroke="#7C8BA3" stroke-width="1.6" fill="none" marker-end="url(#arp)" />
+
+  <rect x="40" y="196" width="400" height="90" fill="#241C10" stroke="#6B4E1E" stroke-width="1.5" rx="10" />
+  <text x="56" y="222" fill="#F0C070" font-size="13px" font-weight="600">Not granted</text>
+  <text x="56" y="242" fill="#C7B08A" font-size="10.5px">MessageState explains why the permission is needed.</text>
+  <text x="56" y="259" fill="#C7B08A" font-size="10.5px">“Allow access” re-requests, then re-checks on return.</text>
+  <text x="56" y="276" fill="#8C99AE" font-size="10px">READ_MEDIA_VIDEO · READ_MEDIA_AUDIO · READ_EXTERNAL_STORAGE</text>
+
+  <rect x="460" y="196" width="400" height="90" fill="#152218" stroke="#2E5B3A" stroke-width="1.5" rx="10" />
+  <text x="476" y="222" fill="#7CE0C0" font-size="13px" font-weight="600">Granted</text>
+  <text x="476" y="242" fill="#A9C6B4" font-size="10.5px">LaunchedEffect(granted) → viewModel.refresh()</text>
+  <text x="476" y="259" fill="#A9C6B4" font-size="10.5px">The scan runs once, and again on every “Scan again”.</text>
+  <text x="476" y="276" fill="#8C99AE" font-size="10px">Read-only access: files are never written, moved, or deleted.</text>
+
+  <line x1="240" y1="286" x2="240" y2="318" stroke="#7C8BA3" stroke-width="1.6" fill="none" marker-end="url(#arp)" />
+  <line x1="660" y1="286" x2="660" y2="318" stroke="#7C8BA3" stroke-width="1.6" fill="none" marker-end="url(#arp)" />
+
+  <rect x="40" y="326" width="250" height="70" fill="#1C1C24" stroke="#33405A" stroke-width="1.5" rx="10" />
+  <text x="56" y="352" fill="#DCE3EE" font-size="13px" font-weight="600">MediaLibrary.refresh()</text>
+  <text x="56" y="371" fill="#8C99AE" font-size="10.5px">Mutex-guarded: one scan</text>
+  <text x="56" y="386" fill="#8C99AE" font-size="10.5px">shared by concurrent calls</text>
+
+  <line x1="290" y1="361" x2="328" y2="361" stroke="#7C8BA3" stroke-width="1.6" fill="none" marker-end="url(#arp)" />
+
+  <rect x="330" y="326" width="270" height="70" fill="#1C1C24" stroke="#33405A" stroke-width="1.5" rx="10" />
+  <text x="346" y="352" fill="#DCE3EE" font-size="13px" font-weight="600">MediaStoreRepository.scan()</text>
+  <text x="346" y="371" fill="#8C99AE" font-size="10.5px">Video + Audio rows → MediaItem</text>
+  <text x="346" y="386" fill="#8C99AE" font-size="10.5px">each keyed by its content:// URI</text>
+
+  <line x1="600" y1="361" x2="638" y2="361" stroke="#7C8BA3" stroke-width="1.6" fill="none" marker-end="url(#arp)" />
+
+  <rect x="640" y="326" width="220" height="70" fill="#1C1C24" stroke="#33405A" stroke-width="1.5" rx="10" />
+  <text x="656" y="352" fill="#DCE3EE" font-size="13px" font-weight="600">StateFlow&lt;List&lt;MediaItem&gt;&gt;</text>
+  <text x="656" y="371" fill="#8C99AE" font-size="10.5px">held in memory, newest first</text>
+  <text x="656" y="386" fill="#8C99AE" font-size="10.5px">no disk cache, no staleness</text>
+
+  <line x1="450" y1="396" x2="450" y2="428" stroke="#7C8BA3" stroke-width="1.6" fill="none" marker-end="url(#arp)" />
+
+  <rect x="40" y="436" width="820" height="112" fill="#1C1C24" stroke="#2E3646" stroke-width="1.5" rx="10" />
+  <text x="56" y="464" fill="#DCE3EE" font-size="13px" font-weight="600">Screens read the library</text>
+  <text x="56" y="483" fill="#8C99AE" font-size="10.5px">One source of truth: every screen observes MediaLibrary.items or derives from it.</text>
+
+  <g font-family="ui-sans-serif, system-ui, 'Segoe UI', Roboto, sans-serif" font-size="11.5px" font-weight="600">
+    <rect x="56" y="498" width="144" height="36" rx="8" fill="#171d29" stroke="#2E3646" stroke-width="1.4" />
+    <text x="128" y="521" text-anchor="middle" fill="#9ECAFF">Home</text>
+    <rect x="214" y="498" width="144" height="36" rx="8" fill="#171d29" stroke="#2E3646" stroke-width="1.4" />
+    <text x="286" y="521" text-anchor="middle" fill="#9ECAFF">Search</text>
+    <rect x="372" y="498" width="144" height="36" rx="8" fill="#171d29" stroke="#2E3646" stroke-width="1.4" />
+    <text x="444" y="521" text-anchor="middle" fill="#9ECAFF">Detail</text>
+    <rect x="530" y="498" width="144" height="36" rx="8" fill="#171d29" stroke="#2E3646" stroke-width="1.4" />
+    <text x="602" y="521" text-anchor="middle" fill="#9ECAFF">Player</text>
+    <rect x="688" y="498" width="156" height="36" rx="8" fill="#171d29" stroke="#2E3646" stroke-width="1.4" />
+    <text x="766" y="521" text-anchor="middle" fill="#9ECAFF">Favourites</text>
+  </g>
+
+  <rect x="40" y="576" width="820" height="56" fill="#152218" stroke="#2E5B3A" stroke-width="1.5" rx="10" />
+  <text x="56" y="600" fill="#DCE3EE" font-size="12px" font-weight="600">The library is the only content source.</text>
+  <text x="56" y="619" fill="#93A0B5" font-size="10.5px">No server, no account, no network. Every item the app can show came from MediaStore on this device.</text>
+</svg>
