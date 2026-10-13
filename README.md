@@ -82,14 +82,9 @@ release build.
 > [!TIP]
 > **No.** Jellyfin does not use API keys for client access.
 
-You supply two things you already have:
-
-1. **Server URL** — e.g. `https://jellyfin.example.com` or `http://192.168.1.10:8096`
-2. **Username and password** — your normal Jellyfin account
-
-At sign-in the app calls `POST /Users/AuthenticateByName`. Your server verifies the
-credentials and returns an **access token**, which the app stores and attaches to
-every later request. You never create or paste a key.
+You sign in with a server URL and your normal Jellyfin username and password, and the
+server returns an access token that the app stores and reuses. See
+[Connecting to your server](#connecting-to-your-server) for the details.
 
 The only key you could generate yourself is a Jellyfin *server* API key
 (Dashboard → API Keys). That is for server-side integrations and is **not** used here.
@@ -97,6 +92,69 @@ The only key you could generate yourself is a Jellyfin *server* API key
 <div align="center">
   <img src="docs/auth-flow.svg" alt="Authentication flow: launch, session check, auth screen, AuthenticateByName, token persisted to DataStore" width="900">
 </div>
+
+## Connecting to your server
+
+> [!IMPORTANT]
+> **N Player is a client, not a service.** There is no N Player account and no cloud in
+> the middle. It talks to a **Jellyfin server you run yourself** — on a NAS, a home
+> server, a VPS, or a container. If you do not have one yet, install Jellyfin first;
+> the app has nothing to reach until you do.
+
+That is why sign-in asks for a URL, a username, and a password instead of an email
+address. Nobody operates a directory of Jellyfin servers for the app to look you up in,
+so it has to be told where yours lives and then prove who you are to it.
+
+### Find your server URL
+
+| Where your server runs | What to enter |
+|---|---|
+| Same Wi-Fi or LAN | `http://<server-ip>:8096` — e.g. `http://192.168.1.10:8096` |
+| Behind a reverse proxy | `https://jellyfin.example.com` |
+| Docker | The host's LAN IP, **not** `localhost` — `localhost` on a phone means the phone |
+
+The web UI is served from the same address. If `http://<server-ip>:8096` opens
+Jellyfin's login page in a browser, that is the URL to type into the app. You can read
+the exact address from **Dashboard → Networking** on the server.
+
+The scheme is optional — `media.example.com` becomes `https://media.example.com`. Note
+that `192.168.1.10:8096` with no scheme *also* becomes **https**, which a plain LAN
+server usually does not answer, so type `http://` yourself for local servers.
+
+> [!WARNING]
+> **Cleartext HTTP is opt-in.** The manifest sets `usesCleartextTraffic="false"`, so an
+> `http://` server is rejected rather than silently allowed. This is deliberate: a typo
+> cannot quietly downgrade you to an unencrypted connection. Type `http://` for a LAN
+> server; use TLS for anything reachable from the internet.
+
+### Steps
+
+1. **Install and start Jellyfin.** Note the address shown in Dashboard → Networking.
+2. **Open N Player.** It shows the Auth screen on first launch.
+3. **Server URL** — your address, e.g. `http://192.168.1.10:8096`.
+4. **Username and password** — your normal Jellyfin account. If you only have an admin
+   login and would rather not use it on a phone, create a regular user in
+   Dashboard → Users.
+5. **Sign in.** The app calls `POST /Users/AuthenticateByName`; the server returns a
+   token that is stored and reused. No API key, and no re-typing later.
+
+### If sign-in fails
+
+| Message | Likely cause |
+|---|---|
+| "Could not reach the server" | Wrong IP or port, phone on a different network, a firewall, or `http://` typed without the scheme |
+| "Invalid username or password" | Wrong credentials, or the account has a password you left blank |
+| "The server returned an error" | The address answers but is not Jellyfin — another service on port 8096, or a proxy misrouting the API paths |
+| "Sign-in failed" | The URL resolves to something that is not a Jellyfin server |
+
+Only the URL and username are required to submit, so a passwordless Jellyfin account
+works. Everything the app sends goes to your server; see
+[Security and privacy](#security-and-privacy).
+
+> [!NOTE]
+> **Automatic discovery (UDP 7359) and Quick Connect are not implemented yet**, so the
+> server URL is entered by hand. Both are Jellyfin features that could remove most of
+> this typing later; manual entry works everywhere and is the current behaviour.
 
 ## Screens at a glance
 
@@ -108,7 +166,7 @@ The only key you could generate yourself is a Jellyfin *server* API key
 | **Search** | Server-side search, debounced 300 ms, minimum two characters | `SearchViewModel` |
 | **Downloads** | Live progress for everything kept offline | `DownloadsViewModel` |
 | **Player** | Media3 `PlayerView` inside Compose, with a back affordance | `PlayerViewModel` |
-| **Settings** | Server and account info, biometric lock toggle, sign out | `SettingsViewModel` |
+| **Settings** | Server and account info, light/dark/system theme control, biometric lock toggle, sign out | `SettingsViewModel` |
 
 The bottom bar carries Home, Search, Downloads, and Settings. Detail and Player are
 full-screen destinations pushed on top, which is why the bar hides for them.
