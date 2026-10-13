@@ -34,6 +34,24 @@ files are there.
 
 </div>
 
+## What's new in 1.0.0
+
+> [!IMPORTANT]
+> **The Jellyfin client is gone.** N Player no longer connects to a server. It plays the
+> video and audio already on your device — no URL, no username, no password, and no
+> network access. If you used an earlier build to stream from a Jellyfin server, that
+> workflow has been removed; this is a standalone local player now.
+
+| Change | What it means |
+|---|---|
+| **No server, no account** | The sign-in screen is gone. There is nothing to configure. |
+| **Local library** | Videos and audio are read from Android's own MediaStore, newest first. |
+| **On-device resume** | Positions are saved every five seconds and restored on Play; nothing is uploaded. |
+| **Favourites** | Star any file and it collects on the Favourites tab. |
+| **Light / dark / system** | A segmented theme control in Settings, remembered across launches. |
+| **No `INTERNET` permission** | The app cannot make a network request, by design. |
+| **Smaller dependency set** | Room, Retrofit, OkHttp, Gson, WorkManager, and mediarouter were removed. |
+
 ## Install
 
 > [!IMPORTANT]
