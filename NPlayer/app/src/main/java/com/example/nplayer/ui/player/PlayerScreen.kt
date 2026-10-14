@@ -13,6 +13,8 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -421,8 +423,9 @@ private fun ControlsOverlay(
         Row(
             Modifier
                 .fillMaxWidth()
+                .horizontalScroll(rememberScrollState())
                 .padding(vertical = 4.dp),
-            horizontalArrangement = Arrangement.SpaceEvenly,
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
         ) {
             OverlayButton(Icons.Filled.Speed, formatSpeed(state.speed), onSpeed)
             OverlayButton(

@@ -49,6 +49,7 @@ files are there.
 | **On-device resume** | Positions are saved every five seconds and restored on Play; nothing is uploaded. |
 | **Favourites** | Star any file and it collects on the Favourites tab. |
 | **Light / dark / system** | A segmented theme control in Settings, remembered across launches. |
+| **Player controls** | A full controls overlay: gestures, 0.25x–4x speed, aspect ratio, A–B repeat, sleep timer, repeat/shuffle, screen lock, mirror, night mode, auto-rotate, and subtitle attach. |
 | **No `INTERNET` permission** | The app cannot make a network request, by design. |
 | **Smaller dependency set** | Room, Retrofit, OkHttp, Gson, WorkManager, and mediarouter were removed. |
 
@@ -191,7 +192,7 @@ button to ask again. Nothing is scanned until you grant it.
 | **Home** | Requests the media permission, then lists videos and music found on the device | `HomeViewModel` |
 | **Search** | Filters the on-device library by title, artist, or album, from two characters | `SearchViewModel` |
 | **Detail** | Thumbnail, file metadata, a Play or Resume button, and a favourite toggle | `DetailViewModel` |
-| **Player** | Media3 `PlayerView` inside Compose, with a back affordance | `PlayerViewModel` |
+| **Player** | Compose controls overlay over the video surface: gestures, speed, aspect, A–B repeat, sleep timer, and more | `PlayerViewModel` |
 | **Favourites** | Everything you have starred, in one grid | `FavouritesViewModel` |
 | **Settings** | Light/dark/system theme, biometric lock, and about | `SettingsViewModel` |
 
@@ -214,7 +215,8 @@ NPlayer/app/src/main/java/com/example/nplayer/
 ├── data/
 │   ├── media/        MediaStoreRepository (scan), MediaLibrary (cache), MediaItem
 │   └── prefs/        AppSettingsStore, PlaybackPositionStore, ThemeMode
-├── playback/         PlaybackService (MediaSessionService), PlaybackController
+├── playback/         PlaybackService (MediaSessionService), PlaybackController,
+│                     PlayerSettings (pure helpers: speed, clocks, A–B model)
 └── ui/               Compose: theme, navigation, components, six screens
 ```
 
@@ -444,8 +446,10 @@ APK as artifacts.
 
 `MediaItemFormattingTest` covers the small formatting helpers that are easy to get wrong
 and easy to miss: duration text across the hour boundary and unknown durations, and size
-text at each unit boundary. They run on the JVM with no device, because the helpers are
-pure functions with no Android dependencies.
+text at each unit boundary. `PlayerSettingsTest` covers the player's pure helpers: speed
+stepping up and down the preset ladder, clock formatting under and over an hour, the
+repeat and resize cycles, and the A–B repeat's active-state rules. Both run on the JVM
+with no device, because the helpers are pure functions with no Android dependencies.
 
 ### Signing a release
 

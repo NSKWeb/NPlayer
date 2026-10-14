@@ -1,9 +1,16 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 660" width="320" height="660" role="img" aria-labelledby="t d">
   <title id="t">N Player player screen</title>
-  <desc id="d">Player screen: a full-bleed video surface with a back button, the file title, and transport controls with a scrubber below.</desc>
+  <desc id="d">Player screen: a full-bleed video surface under a Compose controls overlay with a back button and title, a lock button, ten-second rewind and forward around a pause button, a scrubber with elapsed and total time, and a scrollable row of controls for speed, aspect, repeat, shuffle, A-B repeat, sleep timer, mirror, night mode, rotate, and subtitles.</desc>
   <defs>
     <clipPath id="scr"><rect x="16" y="16" width="288" height="628" rx="28"/></clipPath>
     <linearGradient id="still" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#22334F"/><stop offset="50%" stop-color="#141B2A"/><stop offset="100%" stop-color="#0A0C11"/></linearGradient>
+    <style>
+      .lbl { font-family: ui-sans-serif, system-ui, sans-serif; font-size: 8px; fill: #E8ECF3; }
+      .dim { font-family: ui-sans-serif, system-ui, sans-serif; font-size: 9.5px; fill: #8B98AE; }
+      .ttl { font-family: ui-sans-serif, system-ui, sans-serif; font-size: 12px; font-weight: 700; fill: #E8ECF3; }
+      .ico { fill: #E8ECF3; }
+      .act { fill: #9ECAFF; }
+    </style>
   </defs>
 
   <rect width="320" height="660" fill="#08080B"/>
@@ -11,25 +18,63 @@
   <rect x="16" y="16" width="288" height="628" rx="28" fill="#0C0D12"/>
   <g clip-path="url(#scr)">
     <rect x="16" y="16" width="288" height="628" fill="#000000"/>
-    <rect x="16" y="16" width="288" height="440" fill="url(#still)"/>
-    <circle cx="160" cy="220" r="34" fill="#0C0D12" opacity="0.55"/>
-    <circle cx="160" cy="220" r="34" fill="none" stroke="#9ECAFF" stroke-width="1.6" opacity="0.7"/>
-    <path d="M150,204 L150,236 L178,220 Z" fill="#9ECAFF"/>
-    <circle cx="44" cy="48" r="16" fill="#0C0D12" opacity="0.62"/>
-    <path d="M48,42 L40,48 L48,54" fill="none" stroke="#E8ECF3" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
-    <text x="28" y="482" font-family="ui-sans-serif, system-ui, sans-serif" font-size="13" font-weight="700" fill="#E8ECF3">Trip 2024</text>
-    <text x="28" y="500" font-family="ui-sans-serif, system-ui, sans-serif" font-size="10" fill="#8B98AE">1920x1080  •  3.4 GB  •  On this device</text>
-    <rect x="28" y="520" width="264" height="4" rx="2" fill="#33363F"/>
-    <rect x="28" y="520" width="118" height="4" rx="2" fill="#9ECAFF"/>
-    <circle cx="146" cy="522" r="6" fill="#9ECAFF"/>
-    <text x="28" y="546" font-family="ui-sans-serif, system-ui, sans-serif" font-size="9.5" fill="#8B98AE">24:18</text>
-    <text x="292" y="546" text-anchor="end" font-family="ui-sans-serif, system-ui, sans-serif" font-size="9.5" fill="#8B98AE">1:12:04</text>
-    <path d="M124,566 L124,586 L142,576 Z" fill="#E8ECF3"/>
-    <circle cx="176" cy="576" r="22" fill="#9ECAFF"/>
-    <rect x="169" y="568" width="4.5" height="16" rx="1.5" fill="#0B0B0F"/>
-    <rect x="178" y="568" width="4.5" height="16" rx="1.5" fill="#0B0B0F"/>
-    <path d="M228,566 L228,586 L246,576 Z" fill="#E8ECF3"/>
-    <rect x="28" y="616" width="264" height="3" rx="1.5" fill="#33363F"/>
-    <rect x="28" y="616" width="118" height="3" rx="1.5" fill="#9ECAFF"/>
+    <rect x="16" y="16" width="288" height="628" fill="url(#still)"/>
+    <rect x="16" y="16" width="288" height="628" fill="#000000" opacity="0.35"/>
+
+    <circle cx="40" cy="44" r="15" fill="#0C0D12" opacity="0.62"/>
+    <path d="M44,38 L36,44 L44,50" fill="none" stroke="#E8ECF3" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+    <text x="64" y="48" class="ttl">Trip 2024</text>
+    <circle cx="278" cy="44" r="15" fill="#0C0D12" opacity="0.62"/>
+    <rect x="272" y="42" width="12" height="9" rx="2" fill="none" stroke="#E8ECF3" stroke-width="1.6"/>
+    <path d="M274,42 L274,38 A4,4 0 0 1 282,38 L282,42" fill="none" stroke="#E8ECF3" stroke-width="1.6"/>
+
+    <g transform="translate(120,300)">
+      <path d="M12,0 A12,12 0 1 0 24,12" fill="none" stroke="#E8ECF3" stroke-width="2" stroke-linecap="round"/>
+      <path d="M12,0 L12,6 L6,3 Z" class="ico"/>
+      <text x="18" y="17" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="8" fill="#E8ECF3">10</text>
+    </g>
+    <circle cx="160" cy="312" r="24" fill="#9ECAFF"/>
+    <rect x="152" y="303" width="5" height="18" rx="1.6" fill="#0B0B0F"/>
+    <rect x="162" y="303" width="5" height="18" rx="1.6" fill="#0B0B0F"/>
+    <g transform="translate(188,300)">
+      <path d="M12,0 A12,12 0 1 1 0,12" fill="none" stroke="#E8ECF3" stroke-width="2" stroke-linecap="round"/>
+      <path d="M12,0 L12,6 L18,3 Z" class="ico"/>
+      <text x="6" y="17" text-anchor="middle" font-family="ui-sans-serif, system-ui, sans-serif" font-size="8" fill="#E8ECF3">10</text>
+    </g>
+
+    <text x="28" y="392" class="dim">24:18</text>
+    <text x="292" y="392" text-anchor="end" class="dim">1:12:04</text>
+    <rect x="28" y="400" width="264" height="4" rx="2" fill="#33363F"/>
+    <rect x="28" y="400" width="118" height="4" rx="2" fill="#9ECAFF"/>
+    <circle cx="146" cy="402" r="6" fill="#9ECAFF"/>
+
+    <g transform="translate(20,436)">
+      <g transform="translate(8,0)">
+        <circle cx="14" cy="14" r="14" fill="#0C0D12" opacity="0.5"/>
+        <path d="M8,14 A6,6 0 1 1 14,20" fill="none" stroke="#E8ECF3" stroke-width="1.6"/>
+        <text x="14" y="42" text-anchor="middle" class="lbl">1x</text>
+      </g>
+      <g transform="translate(62,0)">
+        <rect x="4" y="6" width="20" height="16" rx="2" fill="none" stroke="#E8ECF3" stroke-width="1.6"/>
+        <path d="M8,10 L8,18 M14,10 L14,18" stroke="#8B98AE" stroke-width="1.4"/>
+        <text x="14" y="42" text-anchor="middle" class="lbl">Fit</text>
+      </g>
+      <g transform="translate(116,0)">
+        <path d="M6,12 h4 l3,-4 v10 l-3,-4 h-4 z" fill="none" stroke="#9ECAFF" stroke-width="1.5"/>
+        <path d="M17,9 a4,4 0 0 1 0,8" fill="none" stroke="#9ECAFF" stroke-width="1.5"/>
+        <text x="14" y="42" text-anchor="middle" class="lbl act">All</text>
+      </g>
+      <g transform="translate(170,0)">
+        <path d="M8,8 L20,14 L8,20 z" fill="none" stroke="#8B98AE" stroke-width="1.5"/>
+        <path d="M6,6 L6,22" stroke="#8B98AE" stroke-width="1.5"/>
+        <text x="14" y="42" text-anchor="middle" class="lbl">Shuffle</text>
+      </g>
+      <g transform="translate(224,0)">
+        <path d="M6,14 A8,8 0 0 1 22,14" fill="none" stroke="#8B98AE" stroke-width="1.6"/>
+        <path d="M6,10 v4 h4 M22,18 v-4 h-4" fill="none" stroke="#8B98AE" stroke-width="1.6"/>
+        <text x="14" y="42" text-anchor="middle" class="lbl">A–B</text>
+      </g>
+      <path d="M272,4 L272,24 M278,4 L278,24" stroke="#2C3546" stroke-width="1.4"/>
+    </g>
   </g>
 </svg>
