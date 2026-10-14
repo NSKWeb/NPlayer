@@ -254,8 +254,13 @@ class PlaybackController @Inject constructor(
 
     suspend fun stop(itemKey: String) {
         progressJob?.cancel()
-        val position = withContext(Dispatchers.Main) { controller?.currentPosition ?: 0L }
-        positionStore.save(itemKey, position)
+        // In a queue the item playing may have advanced past the one the screen was
+        // opened on, so save the position against whichever item is current.
+        val (key, position) = withContext(Dispatchers.Main) {
+            val current = controller?.currentMediaItem?.mediaId ?: itemKey
+            current to (controller?.currentPosition ?: 0L)
+        }
+        positionStore.save(key, position)
         currentKey = null
     }
 

@@ -48,9 +48,13 @@ import androidx.compose.material.icons.filled.RepeatOne
 import androidx.compose.material.icons.filled.Replay10
 import androidx.compose.material.icons.filled.ScreenRotation
 import androidx.compose.material.icons.filled.Shuffle
+import androidx.compose.material.icons.filled.SkipNext
+import androidx.compose.material.icons.filled.SkipPrevious
 import androidx.compose.material.icons.filled.Speed
+import com.example.nplayer.playback.formatSpeed
 import androidx.compose.material.icons.filled.Subtitles
 import androidx.compose.material.icons.filled.Timer
+import com.example.nplayer.data.media.MediaKind
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
@@ -105,9 +109,52 @@ fun PlayerScreen(
     viewModel: PlayerViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    val equalizerState by viewModel.equalizer.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val activity = context.findActivity()
+
+    // Video and audio share one player and one view model; only the surface differs.
+    // Video is the fullscreen `PlayerView`, audio is a music-player layout with no
+    // video surface at all, so neither carries controls the other has no use for.
+    val isVideo = state.currentItem?.kind != MediaKind.AUDIO
+
+    DisposableEffect(Unit) {
+        viewModel.onEnter(itemKey, queuePlaylistId)
+        onDispose {
+            viewModel.onLeave(itemKey)
+            // Leaving the player must not leave the window locked sideways.
+            activity?.resetOrientation()
+        }
+    }
+
+    // Hide the status and navigation bars for the whole time the player is on screen,
+    // and put them back on the way out. Swiping still reveals them briefly, which is
+    // the standard immersive behaviour. Audio keeps the bars, like any other app.
+    DisposableEffect(activity) {
+        if (!isVideo) return@DisposableEffect onDispose { }
+        val window = activity?.window
+        val controller = window?.let { WindowCompat.getInsetsController(it, it.decorView) }
+        controller?.systemBarsBehavior =
+            WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+        controller?.hide(WindowInsetsCompat.Type.systemBars())
+        onDispose { controller?.show(WindowInsetsCompat.Type.systemBars()) }
+    }
+
+    if (isVideo) {
+        VideoPlayerScreen(state, onBack, activity, viewModel)
+    } else {
+        AudioPlayerScreen(state, onBack, viewModel)
+    }
+}
+
+@UnstableApi
+@Composable
+private fun VideoPlayerScreen(
+    state: PlayerUiState,
+    onBack: () -> Unit,
+    activity: Activity?,
+    viewModel: PlayerViewModel,
+) {
+    val equalizerState by viewModel.equalizer.collectAsStateWithLifecycle()
 
     var controlsVisible by remember { mutableStateOf(true) }
     var position by remember { mutableLongStateOf(0L) }
@@ -127,11 +174,6 @@ fun PlayerScreen(
             viewModel.attachSubtitle(it.toString())
             showSubtitleSheet = true
         }
-    }
-
-    DisposableEffect(Unit) {
-        viewModel.onEnter(itemKey, queuePlaylistId)
-        onDispose { viewModel.onLeave(itemKey) }
     }
 
     // Poll the player for position/duration; Media3 has no reactive clock.
@@ -173,18 +215,6 @@ fun PlayerScreen(
             }
             delay(1_000)
         }
-    }
-
-    // Hide the status and navigation bars for the whole time the player is on screen,
-    // and put them back on the way out. Swiping still reveals them briefly, which is
-    // the standard immersive behaviour.
-    DisposableEffect(activity) {
-        val window = activity?.window
-        val controller = window?.let { WindowCompat.getInsetsController(it, it.decorView) }
-        controller?.systemBarsBehavior =
-            WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-        controller?.hide(WindowInsetsCompat.Type.systemBars())
-        onDispose { controller?.show(WindowInsetsCompat.Type.systemBars()) }
     }
 
     // Apply the gesture brightness to the window; restore on exit.
@@ -359,6 +389,8 @@ fun PlayerScreen(
                     },
                     onTogglePlay = viewModel::togglePlayPause,
                     onSeekBy = viewModel::seekBy,
+                    onPrevious = viewModel::skipToPrevious,
+                    onNext = viewModel::skipToNext,
                     onSpeed = { showSpeedSheet = true },
                     onSleep = { showSleepSheet = true },
                     onAbRepeat = viewModel::markAbRepeat,
@@ -441,6 +473,8 @@ private fun ControlsOverlay(
     onScrubEnd: () -> Unit,
     onTogglePlay: () -> Unit,
     onSeekBy: (Long) -> Unit,
+    onPrevious: () -> Unit,
+    onNext: () -> Unit,
     onSpeed: () -> Unit,
     onSleep: () -> Unit,
     onAbRepeat: () -> Unit,
@@ -504,7 +538,16 @@ private fun ControlsOverlay(
             IconButton(onClick = { onSeekBy(-10_000) }) {
                 Icon(Icons.Filled.Replay10, contentDescription = "Back 10 seconds", tint = Color.White, modifier = Modifier.size(38.dp))
             }
-            Spacer(Modifier.width(20.dp))
+            Spacer(Modifier.width(12.dp))
+            IconButton(onClick = onPrevious, enabled = state.hasPrevious) {
+                Icon(
+                    Icons.Filled.SkipPrevious,
+                    contentDescription = "Previous",
+                    tint = if (state.hasPrevious) Color.White else Color.White.copy(alpha = 0.38f),
+                    modifier = Modifier.size(38.dp),
+                )
+            }
+            Spacer(Modifier.width(12.dp))
             FilledTonalIconButton(
                 onClick = onTogglePlay,
                 modifier = Modifier.size(68.dp),
@@ -517,7 +560,16 @@ private fun ControlsOverlay(
                     modifier = Modifier.size(34.dp),
                 )
             }
-            Spacer(Modifier.width(20.dp))
+            Spacer(Modifier.width(12.dp))
+            IconButton(onClick = onNext, enabled = state.hasNext) {
+                Icon(
+                    Icons.Filled.SkipNext,
+                    contentDescription = "Next",
+                    tint = if (state.hasNext) Color.White else Color.White.copy(alpha = 0.38f),
+                    modifier = Modifier.size(38.dp),
+                )
+            }
+            Spacer(Modifier.width(12.dp))
             IconButton(onClick = { onSeekBy(10_000) }) {
                 Icon(Icons.Filled.Forward10, contentDescription = "Forward 10 seconds", tint = Color.White, modifier = Modifier.size(38.dp))
             }
@@ -589,7 +641,7 @@ private fun ControlsOverlay(
 }
 
 @Composable
-private fun EqualizerDialog(
+internal fun EqualizerDialog(
     state: com.example.nplayer.playback.EqualizerState,
     range: IntRange,
     onToggle: (Boolean) -> Unit,
@@ -735,13 +787,16 @@ private fun SubtitleSheet(
 }
 
 @Composable
-private fun OverlayButton(
+internal fun OverlayButton(
     icon: androidx.compose.ui.graphics.vector.ImageVector,
     label: String,
     onClick: () -> Unit,
     active: Boolean = false,
+    // The video overlay sits on a dark scrim, so white is the default there. The audio
+    // player draws on the normal surface, where white would be invisible.
+    inactiveTint: Color = Color.White,
 ) {
-    val tint = if (active) MaterialTheme.colorScheme.primary else Color.White
+    val tint = if (active) MaterialTheme.colorScheme.primary else inactiveTint
     IconButton(onClick = onClick) {
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Icon(icon, contentDescription = label, tint = tint, modifier = Modifier.size(22.dp))
@@ -751,7 +806,7 @@ private fun OverlayButton(
 }
 
 @Composable
-private fun ChoiceSheet(
+internal fun ChoiceSheet(
     title: String,
     options: List<Pair<String, Boolean>>,
     onPick: (Int) -> Unit,
@@ -782,11 +837,23 @@ private tailrec fun Context.findActivity(): Activity? = when (this) {
     else -> null
 }
 
-/** Cycles the window between auto, landscape, and portrait. */
+/**
+ * Switches between following the device and a locked landscape view. Rotating is how
+ * the viewer asks for fullscreen while watching, so one press locks landscape and the
+ * next hands control back to the device; there is no separate portrait lock, which
+ * used to leave the app stuck after leaving the player.
+ */
 private fun Activity.toggleOrientation() {
     requestedOrientation = when (requestedOrientation) {
-        ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED -> ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE
-        ActivityInfo.SCREEN_ORIENTATION_LANDSCAPE -> ActivityInfo.SCREEN_ORIENTATION_PORTRAIT
+        ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED -> ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
         else -> ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
     }
+}
+
+/**
+ * Hands orientation back to the device. The rotate button locks landscape, and that
+ * lock would otherwise outlive the player and hold every later screen sideways.
+ */
+fun Activity.resetOrientation() {
+    requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
 }

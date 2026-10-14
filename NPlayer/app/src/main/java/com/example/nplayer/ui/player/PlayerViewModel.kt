@@ -6,6 +6,7 @@ import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.session.MediaController
 import com.example.nplayer.data.media.MediaLibrary
+import com.example.nplayer.data.media.MediaItem
 import com.example.nplayer.data.playlists.PlaylistStore
 import com.example.nplayer.playback.AbRepeat
 import com.example.nplayer.playback.EqualizerController
@@ -14,6 +15,8 @@ import com.example.nplayer.playback.PlaybackController
 import com.example.nplayer.playback.RepeatMode
 import com.example.nplayer.playback.ResizeMode
 import com.example.nplayer.playback.SubtitleTrack
+import com.example.nplayer.playback.buildQueue
+import com.example.nplayer.playback.queueIndexOf
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -40,6 +43,14 @@ data class PlayerUiState(
     val locked: Boolean = false,
     val abRepeat: AbRepeat = AbRepeat(),
     val sleepRemainingMillis: Long? = null,
+    /** True when the queue has an item after this one, so "next" can be enabled. */
+    val hasNext: Boolean = false,
+    /** True when the queue has an item before this one, so "previous" can be enabled. */
+    val hasPrevious: Boolean = false,
+    /** The queue being played, in order; used to show what is coming up next. */
+    val queue: List<MediaItem> = emptyList(),
+    /** The queue item playing now, or null when nothing is queued. */
+    val currentItem: MediaItem? = null,
     val brightness: Float = 0.5f,
     val volume: Float = 1f,
     /** Every subtitle track on the current item: sidecar files, then embedded ones. */
@@ -69,9 +80,16 @@ class PlayerViewModel @Inject constructor(
     private var sleepJob: Job? = null
     private var equalizerJob: Job? = null
     private var subtitleJob: Job? = null
+    private var transportJob: Job? = null
 
     /** Set when the viewer turns subtitles off, so auto-select does not turn them back on. */
     private var subtitlesUserDisabled = false
+
+    /**
+     * True while the viewer is playing through a folder. Next/previous are driven by
+     * the queue, so the buttons only appear once there is somewhere to go.
+     */
+    private var playingFromFolder = false
 
     /** [queuePlaylistId] plays the whole playlist as a queue instead of one item. */
     fun onEnter(itemKey: String, queuePlaylistId: String? = null) {
@@ -106,10 +124,31 @@ class PlayerViewModel @Inject constructor(
                 .orEmpty()
 
             val startIndex = queue.indexOfFirst { it.key == item.key }
-            if (queue.isNotEmpty() && startIndex >= 0) {
-                playbackController.playQueue(queue, startIndex) { library.sidecarsFor(it) }
-            } else {
-                playbackController.play(item, sidecars = library.sidecarsFor(item))
+            val playingQueue: List<MediaItem>
+            when {
+                queue.isNotEmpty() && startIndex >= 0 -> {
+                    playingFromFolder = false
+                    playingQueue = queue
+                    playbackController.playQueue(queue, startIndex) { library.sidecarsFor(it) }
+                }
+                else -> {
+                    // Opened on its own: play the rest of its folder on from it, so the
+                    // next/previous buttons and auto-advance have somewhere to go.
+                    val folderQueue = buildQueue(library.videos() + library.audio(), item.key, item.kind)
+                    playingFromFolder = folderQueue.isNotEmpty()
+                    playingQueue = folderQueue
+                    if (folderQueue.isNotEmpty()) {
+                        playbackController.playQueue(
+                            folderQueue,
+                            queueIndexOf(folderQueue, item.key),
+                        ) { library.sidecarsFor(it) }
+                    } else {
+                        playbackController.play(item, sidecars = library.sidecarsFor(item))
+                    }
+                }
+            }
+            _state.update {
+                it.copy(queue = playingQueue, currentItem = item)
             }
 
             // The service attaches the equalizer once the audio session exists;
@@ -117,6 +156,39 @@ class PlayerViewModel @Inject constructor(
             mirrorEqualizer()
             refreshSubtitles()
             mirrorSubtitles()
+            mirrorTransport()
+        }
+    }
+
+    /**
+     * Next/previous availability changes as the queue advances, and Media3 has no
+     * callback that fires for every case, so it is polled alongside the position.
+     */
+    private fun mirrorTransport() {
+        transportJob?.cancel()
+        transportJob = viewModelScope.launch {
+            while (isActive) {
+                val p = player
+                val hasNext = p?.hasNextMediaItem() == true
+                val hasPrevious = p?.hasPreviousMediaItem() == true
+                // As the queue advances the playing item changes, so the header title and
+                // the "up next" highlight follow whichever item is playing now.
+                val current = _state.value.queue.getOrNull(p?.currentMediaItemIndex ?: -1)
+                if (hasNext != _state.value.hasNext ||
+                    hasPrevious != _state.value.hasPrevious ||
+                    current != _state.value.currentItem
+                ) {
+                    _state.update {
+                        it.copy(
+                            hasNext = hasNext,
+                            hasPrevious = hasPrevious,
+                            currentItem = current ?: it.currentItem,
+                            title = current?.title ?: it.title,
+                        )
+                    }
+                }
+                delay(500)
+            }
         }
     }
 
@@ -175,6 +247,7 @@ class PlayerViewModel @Inject constructor(
         sleepJob?.cancel()
         equalizerJob?.cancel()
         subtitleJob?.cancel()
+        transportJob?.cancel()
         playbackController.release()
     }
 
@@ -195,6 +268,30 @@ class PlayerViewModel @Inject constructor(
     fun togglePlayPause() {
         val p = player ?: return
         if (p.isPlaying) p.pause() else p.play()
+    }
+
+    /**
+     * Moves to the next item in the queue. With repeat off at the end of a folder
+     * queue there is nowhere to go, so the last item is left playing rather than
+     * restarting the folder.
+     */
+    fun skipToNext() {
+        val p = player ?: return
+        if (p.hasNextMediaItem()) p.seekToNextMediaItem()
+    }
+
+    /**
+     * Moves to the previous item. Like the usual music-player behaviour, a few seconds
+     * into the current item this restarts it instead, so a stray tap does not jump
+     * back a whole file.
+     */
+    fun skipToPrevious() {
+        val p = player ?: return
+        if (p.hasPreviousMediaItem() && p.currentPosition < 3_000) {
+            p.seekToPreviousMediaItem()
+        } else {
+            p.seekTo(0)
+        }
     }
 
     fun seekBy(deltaMillis: Long) {

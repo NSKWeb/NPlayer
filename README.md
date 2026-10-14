@@ -34,6 +34,17 @@ files are there.
 
 </div>
 
+## What's new in 1.1.5
+
+1.1.5 adds a proper audio player and makes playback flow from one track to the next.
+
+| Change | What it means |
+| --- | --- |
+| **Next and previous buttons** | Video and audio both have ⏮️ and ⏭️ buttons, so you can move through the folder or playlist without going back to the list. When a track finishes, the next one starts on its own. |
+| **Rotate means fullscreen** | While a video plays, rotating the phone now fills the screen. Rotate back to follow the device again, and leaving the player always hands orientation back to the device, so the app no longer stays stuck sideways. |
+| **A separate audio player** | Audio no longer shares the video overlay. It gets a music-player screen — artwork area, title, artist and album, a seek bar, shuffle and repeat, speed, sleep timer, equalizer, and an up-next queue with the playing track marked. |
+| **No video controls on audio** | Resize, mirror, night mode, picture-in-picture, rotate and subtitles are video-only and no longer appear for music. |
+
 ## What's new in 1.1.4
 
 1.1.4 fixes three smaller player issues.

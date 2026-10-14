@@ -51,14 +51,26 @@ is installable without a keystore.
 
 ### Player controls
 
-`ui/player/PlayerScreen.kt` is a Compose overlay over a `PlayerView` with
-`useController = false`; the stock Media3 controller is not used. All player state and
-the gesture handlers live in `ui/player/PlayerViewModel.kt`. Pure, unit-tested helpers
+`ui/player/PlayerScreen.kt` splits into `VideoPlayerScreen` and `AudioPlayerScreen`; the
+top-level `PlayerScreen` owns the lifecycle (`onEnter`/`onLeave`, orientation reset) and
+picks the surface from the item's `MediaKind`. Video is a Compose overlay over a
+`PlayerView` with `useController = false`; the stock Media3 controller is not used.
+`AudioPlayerScreen.kt` is the separate music-player screen (artwork, metadata, transport,
+shuffle/repeat, speed, sleep timer, equalizer, up-next queue) and deliberately omits
+video-only controls. All player state and the gesture handlers live in
+`ui/player/PlayerViewModel.kt`. Pure, unit-tested helpers
 (enums, speed stepping, clock formatting, A–B model) are in
 `playback/PlayerSettings.kt` — put new pure logic there, not in the composable. The
+queue is built by `playback/QueueBuilder.kt` (`QueueBuilderTest`), which turns the item's
+folder or playlist into the ordered list handed to Media3, so next/previous and
+auto-advance follow the same order. The
 quick-jump steps and their clamping live in `playback/SeekSteps.kt` (`SeekStepsTest`):
 the overlay's row of +20m/+40m/−20m/−40m buttons and the ±10 s buttons all route
 through `PlayerViewModel.seekBy`, which clamps to the media bounds.
+
+Rotating the phone is the fullscreen gesture: `Activity.toggleOrientation()` in
+`PlayerScreen.kt` flips between following the device and a locked landscape, and
+`Activity.resetOrientation()` runs when the player leaves so the lock never outlives it.
 
 `PlayerView`'s own subtitle view is hidden (`subtitleView.visibility = View.GONE`) and
 captions are drawn by the Compose overlay instead, so they stay on screen when the
