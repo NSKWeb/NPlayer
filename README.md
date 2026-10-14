@@ -42,6 +42,7 @@ files are there.
 | --- | --- |
 | **Fullscreen playback** | The status and navigation bars are now hidden while the player is open, and the video fills the whole screen instead of sitting inside the system bar insets. The bars come back when you leave the player. |
 | **No more background playback** | Closing NPlayer from the recents list now stops playback and removes the notification, instead of carrying on in the background until you force stop it. |
+| **Nothing stripped from the build** | Code minification and resource shrinking are turned off, so R8 cannot remove anything the reflection-based paths (Hilt, Media3) rely on. The APK is larger as a result. |
 
 ## What's new in 1.1.2
 

@@ -39,17 +39,19 @@ android {
     }
 
     /**
-     * The published APK is the minified release build, which is several times
-     * smaller and faster than debug. Without a real keystore it is signed with the
-     * debug key so it stays installable and can update earlier debug installs in
-     * place; supply keystore.properties for a proper release signature.
+     * The published APK is the release build. Minification and resource shrinking are
+     * deliberately left off: the app is a personal one, and a larger APK is preferred
+     * over the risk of R8 stripping something the reflection-based paths need. Without
+     * a real keystore it is signed with the debug key so it stays installable and can
+     * update earlier debug installs in place; supply keystore.properties for a proper
+     * release signature.
      */
     val releaseSigning = signingConfigs.findByName("release") ?: signingConfigs.getByName("debug")
 
     buildTypes {
         release {
-            isMinifyEnabled = true
-            isShrinkResources = true
+            isMinifyEnabled = false
+            isShrinkResources = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
