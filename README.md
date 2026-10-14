@@ -34,6 +34,15 @@ files are there.
 
 </div>
 
+## What's new in 1.1.6
+
+1.1.6 makes subtitles readable over the video.
+
+| Change | What it means |
+| --- | --- |
+| **Captions have a solid backing again** | The dark strip behind a caption had gone see-through, so the words sat straight on the picture and were hard to read on busy scenes. It now paints a real background, so the text stands out on any frame. |
+| **Gesture hints match** | The brightness, volume and seek hint used the same see-through backing and now uses the solid one too. |
+
 ## What's new in 1.1.5
 
 1.1.5 adds a proper audio player and makes playback flow from one track to the next.

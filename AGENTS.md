@@ -105,6 +105,19 @@ default: the app keeps its own near-black/blue identity unless the user turns on
 "Match my wallpaper" in Settings. `AppSettings.dynamicColor` is read in `MainActivity`
 and passed to `NPlayerTheme`; the toggle only shows on API 31+.
 
+### Overlays over the video
+
+`PlayerView` draws into a `SurfaceView`, which is composited by the system, not by
+Compose. Anything Compose draws on top of it must go through `Modifier.background`
+(or another draw modifier), because that writes into the window's own display list
+and blends with the video normally.
+
+A Material3 `Surface` is the exception that bites: it paints its colour inside a
+render layer (`graphicsLayer`), and a translucent layer over a `SurfaceView` does not
+blend with the video, so a scrim built from `Surface` renders see-through. The caption
+scrim and the gesture hint both hit this; both now use `Modifier.background` on a `Box`,
+matching the night-mode dim. Keep new overlays on that path.
+
 ### Release APK size
 
 The release APK is padded to exactly 7,000,000 bytes (7.00 MB) on purpose. A placeholder

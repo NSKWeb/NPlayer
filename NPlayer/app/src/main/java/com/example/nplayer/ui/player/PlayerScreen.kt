@@ -61,7 +61,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -323,37 +322,49 @@ private fun VideoPlayerScreen(
         }
 
         gestureHint?.let {
-            Surface(
-                color = Color.Black.copy(alpha = 0.7f),
-                shape = RoundedCornerShape(14.dp),
-                modifier = Modifier.align(Alignment.Center),
+            // Same reasoning as the caption scrim below: a Material Surface over the
+            // player's SurfaceView comes out transparent, so paint the background directly.
+            Box(
+                modifier = Modifier
+                    .align(Alignment.Center)
+                    .background(
+                        color = Color.Black.copy(alpha = 0.7f),
+                        shape = RoundedCornerShape(14.dp),
+                    )
+                    .padding(horizontal = 20.dp, vertical = 14.dp),
             ) {
                 Text(
                     it,
                     color = Color.White,
                     style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 14.dp),
                 )
             }
         }
 
         // Captions sit above the controls so they stay on screen when the overlay
-        // auto-hides, which is when a subtitle is most useful.
+        // auto-hides, which is when a subtitle is most useful. The scrim is a plain
+        // background on a Box, not a Material Surface: Surface paints its colour inside
+        // a render layer, and a translucent layer over the player's SurfaceView does not
+        // blend with the video, so the scrim came out transparent and the text floated
+        // on the picture. Modifier.background draws into the window's own display list,
+        // the same way the night-mode dim below does, and blends correctly.
         state.subtitleText?.let { caption ->
-            Surface(
-                color = Color.Black.copy(alpha = 0.6f),
-                shape = RoundedCornerShape(10.dp),
+            Box(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .padding(horizontal = 24.dp)
-                    .padding(bottom = if (controlsVisible) 190.dp else 48.dp),
+                    .padding(bottom = if (controlsVisible) 190.dp else 48.dp)
+                    .background(
+                        color = Color.Black.copy(alpha = 0.75f),
+                        shape = RoundedCornerShape(10.dp),
+                    )
+                    .padding(horizontal = 14.dp, vertical = 8.dp),
             ) {
                 Text(
                     caption,
                     color = Color.White,
                     textAlign = TextAlign.Center,
                     style = MaterialTheme.typography.titleMedium,
-                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
                 )
             }
         }
