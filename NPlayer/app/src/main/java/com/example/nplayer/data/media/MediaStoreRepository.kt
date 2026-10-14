@@ -25,6 +25,38 @@ class MediaStoreRepository @Inject constructor(
     }
 
     /**
+     * Subtitle files on the device, keyed by lower-case file name. Sidecars are
+     * matched to media by name at playback time, so the library is not rescanned when
+     * one is added. Uses `MediaStore.Files`, which needs no extra permission beyond
+     * the media read already granted.
+     */
+    suspend fun scanSubtitles(): Map<String, SubtitleFile> = withContext(Dispatchers.IO) {
+        val collection = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            MediaStore.Files.getContentUri(MediaStore.VOLUME_EXTERNAL)
+        } else {
+            MediaStore.Files.getContentUri("external")
+        }
+        val projection = arrayOf(
+            MediaStore.Files.FileColumns._ID,
+            MediaStore.Files.FileColumns.DISPLAY_NAME,
+        ) + folderColumns
+
+        val results = mutableMapOf<String, SubtitleFile>()
+        runQuery(collection, projection) { cursor ->
+            val id = cursor.getLongOrNull(0) ?: return@runQuery
+            val name = cursor.getStringOrNull(1) ?: return@runQuery
+            if (isSubtitleExtension(name.substringAfterLast('.', ""))) {
+                results[name.lowercase()] = SubtitleFile(
+                    name = name,
+                    uri = ContentUris.withAppendedId(collection, id),
+                    folder = cursor.folderOrRoot(2),
+                )
+            }
+        }
+        results
+    }
+
+    /**
      * `RELATIVE_PATH` only exists from API 29. Asking for an unknown column throws,
      * which [runQuery] would swallow into an empty library, so the column is requested
      * only where it exists. On API 26–28 the folder is derived from the legacy `DATA`
@@ -79,6 +111,7 @@ class MediaStoreRepository @Inject constructor(
                 dateAddedSeconds = cursor.getLongOrNull(4) ?: 0L,
                 resolution = if (width != null && height != null && height > 0) "${width}x$height" else null,
                 folder = cursor.folderOrRoot(7),
+                fileName = name.orEmpty(),
             )
         }
     }
@@ -98,6 +131,7 @@ class MediaStoreRepository @Inject constructor(
             MediaStore.Audio.Media.DATE_ADDED,
             MediaStore.Audio.Media.ALBUM,
             MediaStore.Audio.Media.ARTIST,
+            MediaStore.Audio.Media.DISPLAY_NAME,
         ) + folderColumns
 
         return runQuery(collection, projection) { cursor ->
@@ -112,7 +146,8 @@ class MediaStoreRepository @Inject constructor(
                 dateAddedSeconds = cursor.getLongOrNull(4) ?: 0L,
                 album = cursor.getStringOrNull(5),
                 artist = cursor.getStringOrNull(6),
-                folder = cursor.folderOrRoot(7),
+                folder = cursor.folderOrRoot(8),
+                fileName = cursor.getStringOrNull(7).orEmpty(),
             )
         }
     }

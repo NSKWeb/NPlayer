@@ -60,6 +60,32 @@ quick-jump steps and their clamping live in `playback/SeekSteps.kt` (`SeekStepsT
 the overlay's row of +20m/+40m/−20m/−40m buttons and the ±10 s buttons all route
 through `PlayerViewModel.seekBy`, which clamps to the media bounds.
 
+`PlayerView`'s own subtitle view is hidden (`subtitleView.visibility = View.GONE`) and
+captions are drawn by the Compose overlay instead, so they stay on screen when the
+controls auto-hide. If you re-enable Media3's subtitle rendering, remove the overlay.
+
+### Subtitles
+
+Subtitle detection is name-based and local — no network, no permission beyond the media
+read. The rules are pure and unit-tested in `data/media/SubtitleFiles.kt` (matching a
+sidecar to a media file, accepted extensions, language tags) and `playback/
+SubtitleTracks.kt` (`SubtitleTrack` model and the sidecar-then-embedded list builder).
+Keep new matching logic there.
+
+The flow: `MediaStoreRepository.scanSubtitles()` indexes subtitle files by name;
+`MediaLibrary.sidecarsFor(item)` returns those in the item's folder that match;
+`PlaybackController` attaches them as `SubtitleConfiguration`s and reads embedded text
+tracks back out of `currentTracks`. `PlayerViewModel` auto-selects a lone sidecar and
+mirrors the active cue text into `PlayerUiState.subtitleText`.
+
+Selection is by Media3 `TrackSelectionParameters` — a text override plus
+`setTrackTypeDisabled(TRACK_TYPE_TEXT, true)` to turn subtitles off. A sidecar's track
+group id is not stable across Media3 versions, so `selectedSubtitleTrack()` matches
+embedded tracks by group id and treats any other selected text track as the sidecar.
+When the viewer turns subtitles off, `subtitlesUserDisabled` stops auto-select turning
+them back on. `.sub` is intentionally not an accepted extension (usually MicroDVD,
+which the extractor cannot parse).
+
 ### Theme
 
 `ui/theme/Theme.kt` owns the palette and typography. Dynamic colour is **off** by

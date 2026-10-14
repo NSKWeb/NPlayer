@@ -47,6 +47,7 @@ from the player.
 | **Match my wallpaper** | Dynamic colour (Material You) is now a **setting**, off by default, so the app keeps its own identity unless you ask for the wallpaper palette. |
 | **Better cards** | Rounded poster cards with a duration pill and a soft scrim, section headings with counts, and a filled/outlined bottom bar. |
 | **Stops when it is done** | The player service now ends itself when a file finishes with nothing queued, so the app does not linger in the background after you close it. |
+| **Subtitles, found for you** | Subtitle files sitting next to a video are picked up automatically, embedded text tracks are listed too, and the Subtitle button turns them on and off and lets you choose. |
 
 ## What's new in 1.0.2
 
@@ -114,11 +115,29 @@ below is local playback control, no network involved.
 | **Auto-rotate** | Cycles the window between auto, landscape, and portrait. |
 | **Picture-in-picture** | Shrinks the video into a floating window that keeps playing over other apps. |
 | **Equalizer** | Device presets and per-band sliders, bound to the player's audio session. |
-| **Subtitles** | Attach a sidecar subtitle file to the current item; rendered by Media3. |
+| **Subtitles** | Lists the subtitle files sitting next to the item and any text track inside it, shows the one you pick, and turns subtitles off again. |
 
-Built from the Arc-Player-parity list: folder browsing, playlists, picture-in-picture,
-the equalizer, and the private folder. Still open: a subtitle *downloader* (it would need
-`INTERNET`) and true all-format decoding (RMVB/WMV/DivX would need FFmpeg).
+### Subtitles
+
+Subtitles are found automatically. When an item opens, the app looks for subtitle files
+in the same folder whose name matches the media — `Trip.2024.en.srt` belongs to
+`Trip.2024.mp4` — and lists any text track already inside the container as well. A
+recognised language tag becomes the label, so `Trip.2024.en.srt` is listed as
+"English". If there is exactly one sidecar, it is shown straight away.
+
+The **Subtitle** button in the controls row opens a sheet listing every track with a
+marker for whether it is a sidecar file or embedded. Choosing one shows it; **Turn
+off** hides it; **Open a file…** attaches one the app did not find. Only one subtitle
+is shown at a time. A file the viewer turns off stays off until they turn it back on,
+so auto-select does not fight them.
+
+Detection is name-based and local: it reads the device's own file index and never goes
+to the network. Formats follow what the Media3 extractors can read — SRT, WebVTT, SSA/
+ASS, and TTML. A `.sub` file is deliberately not offered, because it is usually
+MicroDVD, which the extractor cannot parse.
+
+Still open: a subtitle *downloader* (it would need `INTERNET`) and true all-format
+decoding (RMVB/WMV/DivX would need FFmpeg).
 
 ## Install
 
@@ -320,12 +339,23 @@ the device stored.
 The player screen does not use `PlayerView`'s built-in controller. It sets
 `useController = false` and draws a Compose overlay instead, so gestures, the aspect
 selector, A–B repeat, the sleep timer, and the rest live in one place and stay in sync
-with `PlayerViewModel`. The view is still a `PlayerView` because that is what renders
-the video surface and Media3's subtitle output.
+with `PlayerViewModel`. The view is still a `PlayerView` for the video surface, but its
+own subtitle view is hidden: captions are drawn by the Compose overlay, which keeps
+them on screen when the controls auto-hide.
 
 The overlay reads player state by polling — Media3 has no reactive clock — and applies
 gesture brightness to the Activity window, restoring the previous value when the screen
 leaves.
+
+### Finding subtitles
+
+`MediaStoreRepository.scanSubtitles()` reads the device's file index once per library
+refresh and keeps the subtitle files keyed by name. When an item opens, `MediaLibrary`
+picks the sidecars in its folder whose name matches the media, and `PlaybackController`
+attaches them to the Media3 item as `SubtitleConfiguration`s alongside any text track
+already in the container. The matching and label rules live in `data/media/
+SubtitleFiles.kt` and are unit-tested; only the Media3 calls around them touch the
+device.
 
 ### Resume position
 
@@ -650,10 +680,13 @@ covers the small formatting helpers that are easy to get wrong and easy to miss:
 text across the hour boundary and unknown durations, and size text at each unit boundary.
 `PlayerSettingsTest` covers the player's pure helpers: speed stepping up and down the
 preset ladder, clock formatting under and over an hour, the repeat and resize cycles, and
-the A–B repeat's active-state rules. `PlaylistCodecTest` covers playlist serialisation and
-the duplicate and missing-item rules, and `EqualizerSettingsTest` covers the millibel
-range mapping and preset matching. These run on the JVM with no device, because the
-helpers are pure functions with no Android dependencies.
+the A–B repeat's active-state rules. `SubtitleFilesTest` and `SubtitleTracksTest` cover
+subtitle matching: which sidecar names belong to which media file, which extensions the
+extractors accept, when a file-name tag is a language rather than a release tag, and the
+order sidecars and embedded tracks are listed in. `PlaylistCodecTest` covers playlist
+serialisation and the duplicate and missing-item rules, and `EqualizerSettingsTest`
+covers the millibel range mapping and preset matching. These run on the JVM with no
+device, because the helpers are pure functions with no Android dependencies.
 
 Two tests go further and drive the real Android code through Robolectric, still with no
 device: `MediaStoreRepositoryTest` runs the repository against a fake MediaStore provider

@@ -13,6 +13,7 @@ import com.example.nplayer.playback.EqualizerState
 import com.example.nplayer.playback.PlaybackController
 import com.example.nplayer.playback.RepeatMode
 import com.example.nplayer.playback.ResizeMode
+import com.example.nplayer.playback.SubtitleTrack
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -41,6 +42,12 @@ data class PlayerUiState(
     val sleepRemainingMillis: Long? = null,
     val brightness: Float = 0.5f,
     val volume: Float = 1f,
+    /** Every subtitle track on the current item: sidecar files, then embedded ones. */
+    val subtitleTracks: List<SubtitleTrack> = emptyList(),
+    /** The track being shown, or null when subtitles are off. */
+    val activeSubtitle: SubtitleTrack? = null,
+    /** The caption line to draw over the video, already stripped of styling tags. */
+    val subtitleText: String? = null,
 )
 
 @UnstableApi
@@ -61,9 +68,14 @@ class PlayerViewModel @Inject constructor(
     private var abLoopJob: Job? = null
     private var sleepJob: Job? = null
     private var equalizerJob: Job? = null
+    private var subtitleJob: Job? = null
+
+    /** Set when the viewer turns subtitles off, so auto-select does not turn them back on. */
+    private var subtitlesUserDisabled = false
 
     /** [queuePlaylistId] plays the whole playlist as a queue instead of one item. */
     fun onEnter(itemKey: String, queuePlaylistId: String? = null) {
+        subtitlesUserDisabled = false
         viewModelScope.launch {
             val controller = playbackController.connectAndAwait()
             _state.update {
@@ -95,14 +107,58 @@ class PlayerViewModel @Inject constructor(
 
             val startIndex = queue.indexOfFirst { it.key == item.key }
             if (queue.isNotEmpty() && startIndex >= 0) {
-                playbackController.playQueue(queue, startIndex)
+                playbackController.playQueue(queue, startIndex) { library.sidecarsFor(it) }
             } else {
-                playbackController.play(item)
+                playbackController.play(item, sidecars = library.sidecarsFor(item))
             }
 
             // The service attaches the equalizer once the audio session exists;
             // this just mirrors the controller's state into the UI.
             mirrorEqualizer()
+            refreshSubtitles()
+            mirrorSubtitles()
+        }
+    }
+
+    /**
+     * Subtitle tracks appear only after the player has read the file, and an embedded
+     * track list arrives with the first `onTracksChanged`, so the list is re-read on a
+     * short poll while the player settles.
+     */
+    private fun refreshSubtitles() {
+        val tracks = playbackController.subtitleTracks()
+        val active = playbackController.selectedSubtitleTrack()
+        // A single sidecar is the common case, so it is shown without a tap — unless
+        // the viewer has just turned subtitles off on purpose.
+        val auto = if (active == null && !subtitlesUserDisabled) {
+            tracks.singleOrNull { it.isExternal }
+        } else {
+            null
+        }
+        if (active == null && auto != null) playbackController.selectSubtitle(auto)
+        _state.update {
+            it.copy(
+                subtitleTracks = tracks,
+                activeSubtitle = playbackController.selectedSubtitleTrack() ?: auto,
+            )
+        }
+    }
+
+    /** Mirrors the caption text Media3 is currently rendering into the overlay. */
+    private fun mirrorSubtitles() {
+        subtitleJob?.cancel()
+        subtitleJob = viewModelScope.launch {
+            while (isActive) {
+                val text = playbackController.currentCueText()
+                if (text != _state.value.subtitleText) {
+                    _state.update { it.copy(subtitleText = text) }
+                }
+                // The track list changes when the queue moves on, which can happen
+                // without the count changing, so the ids are compared, not the size.
+                val ids = playbackController.subtitleTracks().map { it.id }
+                if (ids != _state.value.subtitleTracks.map { it.id }) refreshSubtitles()
+                delay(400)
+            }
         }
     }
 
@@ -118,6 +174,7 @@ class PlayerViewModel @Inject constructor(
         abLoopJob?.cancel()
         sleepJob?.cancel()
         equalizerJob?.cancel()
+        subtitleJob?.cancel()
         playbackController.release()
     }
 
@@ -179,8 +236,26 @@ class PlayerViewModel @Inject constructor(
 
     fun toggleLock() = _state.update { it.copy(locked = !it.locked) }
 
-    /** Attaches a user-picked subtitle file to the current item. */
-    fun attachSubtitle(uri: String) = playbackController.addSubtitle(uri)
+    // --- Subtitles ---------------------------------------------------------
+
+    /**
+     * Attaches a subtitle file the user picked by hand. It is appended to the item
+     * that is playing and shown straight away.
+     */
+    fun attachSubtitle(uri: String) {
+        playbackController.attachPickedSubtitle(uri)
+        viewModelScope.launch {
+            delay(300)
+            refreshSubtitles()
+        }
+    }
+
+    /** Shows [track], or turns subtitles off when it is null. */
+    fun selectSubtitle(track: SubtitleTrack?) {
+        playbackController.selectSubtitle(track)
+        subtitlesUserDisabled = track == null
+        _state.update { it.copy(activeSubtitle = track, subtitleText = null) }
+    }
 
     // --- Gesture-driven adjustments ---------------------------------------
 

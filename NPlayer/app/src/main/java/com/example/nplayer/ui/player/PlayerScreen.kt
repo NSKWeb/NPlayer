@@ -4,6 +4,7 @@ import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
 import android.content.pm.ActivityInfo
+import android.view.View
 import android.view.ViewGroup
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -90,6 +91,9 @@ import com.example.nplayer.playback.formatClock
 import com.example.nplayer.playback.formatSleepRemaining
 import com.example.nplayer.playback.formatSpeed
 import kotlinx.coroutines.delay
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.ui.text.style.TextAlign
+import com.example.nplayer.playback.SubtitleTrack
 
 @UnstableApi
 @Composable
@@ -113,10 +117,16 @@ fun PlayerScreen(
     var showSpeedSheet by remember { mutableStateOf(false) }
     var showEqualizer by remember { mutableStateOf(false) }
     var showSleepSheet by remember { mutableStateOf(false) }
+    var showSubtitleSheet by remember { mutableStateOf(false) }
 
     val subtitlePicker = rememberLauncherForActivityResult(
         ActivityResultContracts.OpenDocument(),
-    ) { uri -> uri?.let { viewModel.attachSubtitle(it.toString()) } }
+    ) { uri ->
+        uri?.let {
+            viewModel.attachSubtitle(it.toString())
+            showSubtitleSheet = true
+        }
+    }
 
     DisposableEffect(Unit) {
         viewModel.onEnter(itemKey, queuePlaylistId)
@@ -216,12 +226,16 @@ fun PlayerScreen(
                         ViewGroup.LayoutParams.MATCH_PARENT,
                     )
                     setShowBuffering(PlayerView.SHOW_BUFFERING_WHEN_PLAYING)
+                    // Captions are drawn by the Compose overlay below, so the view's
+                    // own subtitle view is hidden to avoid showing each line twice.
+                    subtitleView?.visibility = View.GONE
                 }
             },
             update = { view ->
                 view.player = state.player
                 view.resizeMode = state.resizeMode.media3Mode
                 view.scaleX = if (state.mirrored) -1f else 1f
+                view.subtitleView?.visibility = View.GONE
             },
             modifier = Modifier.fillMaxSize(),
         )
@@ -254,6 +268,27 @@ fun PlayerScreen(
                     color = Color.White,
                     style = MaterialTheme.typography.titleMedium,
                     modifier = Modifier.padding(horizontal = 20.dp, vertical = 14.dp),
+                )
+            }
+        }
+
+        // Captions sit above the controls so they stay on screen when the overlay
+        // auto-hides, which is when a subtitle is most useful.
+        state.subtitleText?.let { caption ->
+            Surface(
+                color = Color.Black.copy(alpha = 0.6f),
+                shape = RoundedCornerShape(10.dp),
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(horizontal = 24.dp)
+                    .padding(bottom = if (controlsVisible) 190.dp else 48.dp),
+            ) {
+                Text(
+                    caption,
+                    color = Color.White,
+                    textAlign = TextAlign.Center,
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
                 )
             }
         }
@@ -302,9 +337,22 @@ fun PlayerScreen(
                     onPictureInPicture = { (activity as? MainActivity)?.enterPictureInPicture() },
                     onEqualizer = { showEqualizer = true },
                     equalizerEnabled = equalizerState.enabled,
-                    onSubtitles = { subtitlePicker.launch(arrayOf("*/*")) },
+                    onSubtitles = { showSubtitleSheet = true },
+                    subtitleActive = state.activeSubtitle != null,
+                    subtitleCount = state.subtitleTracks.size,
                 )
             }
+        }
+
+        if (showSubtitleSheet) {
+            SubtitleSheet(
+                tracks = state.subtitleTracks,
+                active = state.activeSubtitle,
+                onPick = { viewModel.selectSubtitle(it); showSubtitleSheet = false },
+                onTurnOff = { viewModel.selectSubtitle(null); showSubtitleSheet = false },
+                onBrowse = { subtitlePicker.launch(arrayOf("*/*")) },
+                onDismiss = { showSubtitleSheet = false },
+            )
         }
 
         if (showEqualizer) {
@@ -368,10 +416,12 @@ private fun ControlsOverlay(
     onNight: () -> Unit,
     onLock: () -> Unit,
     onRotate: () -> Unit,
-    onSubtitles: () -> Unit,
     onPictureInPicture: () -> Unit,
     onEqualizer: () -> Unit,
     equalizerEnabled: Boolean,
+    onSubtitles: () -> Unit,
+    subtitleActive: Boolean,
+    subtitleCount: Int,
 ) {
     val playing = state.controller?.isPlaying == true
     val shown = if (scrubbing) scrubPosition.toLong() else position
@@ -511,7 +561,12 @@ private fun ControlsOverlay(
             OverlayButton(Icons.Filled.ScreenRotation, "Rotate", onRotate)
             OverlayButton(Icons.Filled.PictureInPictureAlt, "PiP", onPictureInPicture)
             OverlayButton(Icons.Filled.Equalizer, "Equalizer", onEqualizer, active = equalizerEnabled)
-            OverlayButton(Icons.Filled.Subtitles, "Subtitle", onSubtitles)
+            OverlayButton(
+                Icons.Filled.Subtitles,
+                if (subtitleCount > 1) "Subtitle ($subtitleCount)" else "Subtitle",
+                onSubtitles,
+                active = subtitleActive,
+            )
         }
     }
 }
@@ -599,6 +654,62 @@ private fun EqualizerDialog(
                             )
                         }
                     }
+                }
+            }
+        },
+        confirmButton = { TextButton(onClick = onDismiss) { Text("Close") } },
+    )
+}
+
+@Composable
+private fun SubtitleSheet(
+    tracks: List<SubtitleTrack>,
+    active: SubtitleTrack?,
+    onPick: (SubtitleTrack) -> Unit,
+    onTurnOff: () -> Unit,
+    onBrowse: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Subtitles") },
+        text = {
+            Column(Modifier.fillMaxHeight(0.7f).verticalScroll(rememberScrollState())) {
+                if (tracks.isEmpty()) {
+                    Text(
+                        "No subtitle files were found next to this item, and it has no " +
+                            "embedded text track. You can still open a file by hand.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                } else {
+                    tracks.forEach { track ->
+                        TextButton(onClick = { onPick(track) }, modifier = Modifier.fillMaxWidth()) {
+                            Text(
+                                text = if (track == active) "✓ ${track.label}" else track.label,
+                                color = if (track == active) {
+                                    MaterialTheme.colorScheme.primary
+                                } else {
+                                    MaterialTheme.colorScheme.onSurface
+                                },
+                                modifier = Modifier.weight(1f),
+                            )
+                            Text(
+                                if (track.embedded) "Embedded" else "File",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    }
+                    Spacer(Modifier.height(8.dp))
+                    HorizontalDivider()
+                }
+                Spacer(Modifier.height(8.dp))
+                TextButton(onClick = onTurnOff, modifier = Modifier.fillMaxWidth()) {
+                    Text("Turn off")
+                }
+                TextButton(onClick = onBrowse, modifier = Modifier.fillMaxWidth()) {
+                    Text("Open a file…")
                 }
             }
         },
