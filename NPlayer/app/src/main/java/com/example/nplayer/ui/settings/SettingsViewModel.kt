@@ -15,6 +15,7 @@ import javax.inject.Inject
 data class SettingsUiState(
     val biometricLock: Boolean = false,
     val themeMode: ThemeMode = ThemeMode.SYSTEM,
+    val dynamicColor: Boolean = false,
     val favouriteCount: Int = 0,
 )
 
@@ -28,6 +29,7 @@ class SettingsViewModel @Inject constructor(
             SettingsUiState(
                 biometricLock = it.biometricLockEnabled,
                 themeMode = it.themeMode,
+                dynamicColor = it.dynamicColor,
                 favouriteCount = it.favourites.size,
             )
         }
@@ -39,5 +41,9 @@ class SettingsViewModel @Inject constructor(
 
     fun setThemeMode(mode: ThemeMode) {
         viewModelScope.launch { settingsStore.setThemeMode(mode) }
+    }
+
+    fun setDynamicColor(enabled: Boolean) {
+        viewModelScope.launch { settingsStore.setDynamicColor(enabled) }
     }
 }

@@ -34,6 +34,21 @@ files are there.
 
 </div>
 
+## What's new in 1.1.0
+
+1.1.0 is a design and smoothness pass, plus the long-jump controls that were missing
+from the player.
+
+| Change | What it means |
+|---|---|
+| **Jump 20 / 40 minutes** | The player now has a quick-jump row next to the ±10 s buttons: **+20m, +40m, −20m, −40m**, for skipping through a long film without dragging the scrubber. |
+| **Time remaining** | The seek bar shows the time left (`−1:23:45`) as well as the position, so the length of a file is readable at a glance. |
+| **The app's own look** | A deep near-black palette with a cool blue accent and heavier headings, so your thumbnails are the brightest thing on screen. |
+| **Match my wallpaper** | Dynamic colour (Material You) is now a **setting**, off by default, so the app keeps its own identity unless you ask for the wallpaper palette. |
+| **Better cards** | Rounded poster cards with a duration pill and a soft scrim, section headings with counts, and a filled/outlined bottom bar. |
+| **Stops when it is done** | The player service now ends itself when a file finishes with nothing queued, so the app does not linger in the background after you close it. |
+| **Subtitles, found for you** | Subtitle files sitting next to a video are picked up automatically, embedded text tracks are listed too, and the Subtitle button turns them on and off and lets you choose. |
+
 ## What's new in 1.0.2
 
 1.0.2 fixes playback, which did not start at all in 1.0.0 and 1.0.1, and makes the
@@ -100,11 +115,29 @@ below is local playback control, no network involved.
 | **Auto-rotate** | Cycles the window between auto, landscape, and portrait. |
 | **Picture-in-picture** | Shrinks the video into a floating window that keeps playing over other apps. |
 | **Equalizer** | Device presets and per-band sliders, bound to the player's audio session. |
-| **Subtitles** | Attach a sidecar subtitle file to the current item; rendered by Media3. |
+| **Subtitles** | Lists the subtitle files sitting next to the item and any text track inside it, shows the one you pick, and turns subtitles off again. |
 
-Built from the Arc-Player-parity list: folder browsing, playlists, picture-in-picture,
-the equalizer, and the private folder. Still open: a subtitle *downloader* (it would need
-`INTERNET`) and true all-format decoding (RMVB/WMV/DivX would need FFmpeg).
+### Subtitles
+
+Subtitles are found automatically. When an item opens, the app looks for subtitle files
+in the same folder whose name matches the media — `Trip.2024.en.srt` belongs to
+`Trip.2024.mp4` — and lists any text track already inside the container as well. A
+recognised language tag becomes the label, so `Trip.2024.en.srt` is listed as
+"English". If there is exactly one sidecar, it is shown straight away.
+
+The **Subtitle** button in the controls row opens a sheet listing every track with a
+marker for whether it is a sidecar file or embedded. Choosing one shows it; **Turn
+off** hides it; **Open a file…** attaches one the app did not find. Only one subtitle
+is shown at a time. A file the viewer turns off stays off until they turn it back on,
+so auto-select does not fight them.
+
+Detection is name-based and local: it reads the device's own file index and never goes
+to the network. Formats follow what the Media3 extractors can read — SRT, WebVTT, SSA/
+ASS, and TTML. A `.sub` file is deliberately not offered, because it is usually
+MicroDVD, which the extractor cannot parse.
+
+Still open: a subtitle *downloader* (it would need `INTERNET`) and true all-format
+decoding (RMVB/WMV/DivX would need FFmpeg).
 
 ## Install
 
@@ -306,12 +339,23 @@ the device stored.
 The player screen does not use `PlayerView`'s built-in controller. It sets
 `useController = false` and draws a Compose overlay instead, so gestures, the aspect
 selector, A–B repeat, the sleep timer, and the rest live in one place and stay in sync
-with `PlayerViewModel`. The view is still a `PlayerView` because that is what renders
-the video surface and Media3's subtitle output.
+with `PlayerViewModel`. The view is still a `PlayerView` for the video surface, but its
+own subtitle view is hidden: captions are drawn by the Compose overlay, which keeps
+them on screen when the controls auto-hide.
 
 The overlay reads player state by polling — Media3 has no reactive clock — and applies
 gesture brightness to the Activity window, restoring the previous value when the screen
 leaves.
+
+### Finding subtitles
+
+`MediaStoreRepository.scanSubtitles()` reads the device's file index once per library
+refresh and keeps the subtitle files keyed by name. When an item opens, `MediaLibrary`
+picks the sidecars in its folder whose name matches the media, and `PlaybackController`
+attaches them to the Media3 item as `SubtitleConfiguration`s alongside any text track
+already in the container. The matching and label rules live in `data/media/
+SubtitleFiles.kt` and are unit-tested; only the Media3 calls around them touch the
+device.
 
 ### Resume position
 
@@ -460,8 +504,145 @@ Because releases are versioned, users can also browse older builds under
 | **F-Droid** | Open-source Android catalogue | Requires fully reproducible builds and a public signing setup |
 | **Self-hosted / S3 / Cloudflare R2** | Private or internal distribution | You own the bandwidth, TLS, and uptime |
 
-For Play, you would sign with a real keystore and switch to `bundleRelease` — see
-[Signing a release](#signing-a-release). Everything else above works unchanged.
+## Publishing to the Play Store
+
+This is the full path from this repo to a live listing. It is deliberately step by step:
+each step produces something you can check before moving on.
+
+### 1. Create a release keystore
+
+Play will not accept a debug-signed build, and you must keep this key for the life of
+the app — every future update has to be signed with the same one.
+
+```bash
+keytool -genkeypair -v \
+  -keystore nplayer-release.jks \
+  -alias nplayer \
+  -keyalg RSA -keysize 4096 -validity 10000
+```
+
+Answer the prompts, then keep `nplayer-release.jks` and its passwords somewhere safe
+(a password manager plus an offline backup). If you lose it you cannot update the app.
+
+### 2. Point the build at the keystore
+
+Create `NPlayer/keystore.properties` — it is git-ignored, so the secrets stay local:
+
+```properties
+storeFile=/absolute/path/to/nplayer-release.jks
+storePassword=…
+keyAlias=nplayer
+keyPassword=…
+```
+
+`app/build.gradle.kts` already reads this file and switches the release build to a real
+signature when it is present; with no file it falls back to the debug key, which is what
+makes the GitHub release installable.
+
+### 3. Build an Android App Bundle
+
+Play distributes `.aab`, not `.apk`:
+
+```bash
+cd NPlayer
+./gradlew :app:bundleRelease
+```
+
+The bundle lands at `app/build/outputs/bundle/release/app-release.aab`. Play then
+generates per-device APKs from it, which is smaller for users than one universal APK.
+
+### 4. Set an application id you own
+
+The id is permanent once published. `com.example.nplayer` is fine for sideloading but
+looks unfinished on a store — change `applicationId` in `app/build.gradle.kts` (and the
+`namespace`) to something you control, e.g. `dev.nskweb.nplayer`, **before** the first
+upload. Afterwards you cannot change it.
+
+### 5. Write the store listing assets
+
+You need, ready to upload:
+
+| Asset | Requirement |
+|---|---|
+| App name | 30 characters max |
+| Short description | 80 characters max |
+| Full description | 4000 characters max |
+| App icon | 512×512 PNG, 32-bit |
+| Feature graphic | 1024×500 PNG |
+| Phone screenshots | 2–8 images, 16:9 or 9:16, min 320 px on the short side |
+
+The listing copy is written and the images are generated:
+
+- `docs/store/listing.md` — app name, short description, full description, and the
+  data-safety answers, ready to paste into Play Console.
+- `docs/store/screenshots/` — `feature-graphic.png` (1024×500) and six phone
+  screenshots (1080×1920). Regenerate them with `python docs/store/generate_screenshots.py`.
+
+Still to add by hand: the 512×512 app icon, exported from `NPlayer/app/src/main/
+res/mipmap-anydpi-v26/ic_launcher.xml` or the source artwork.
+
+### 6. Write a privacy policy
+
+Play requires a reachable privacy-policy URL. N Player is easy to describe honestly:
+it reads your media through Android's MediaStore, requests **no** `INTERNET`
+permission, and sends nothing off the device. A single static page stating that is
+enough — GitHub Pages is a fine host.
+
+### 7. Create the app in Play Console
+
+1. Go to [play.google.com/console](https://play.google.com/console) and create a
+   developer account (one-time fee).
+2. **Create app**, set the default language, app name, and choose *App* (not game).
+3. Fill in **App content**: privacy policy URL, ads (none), data safety (no data
+   collected or shared), target audience, and content rating questionnaire.
+4. Complete the **Data safety** form carefully — because there is no network access,
+   you can declare that no data is collected, which is a genuine selling point.
+
+### 8. Upload and roll out
+
+1. **Testing → Internal testing → Create new release**, upload `app-release.aab`.
+2. Add yourself as a tester, install from the opt-in link, and confirm playback,
+   permissions, and the background behaviour on a real device.
+3. Promote to **Closed**, then **Open** testing if you want a wider check.
+4. **Production → Create new release**, upload the same bundle, write release notes,
+   and roll out. First review usually takes a few days.
+
+### 9. Ship updates
+
+Bump `versionCode` (must increase every upload) and `versionName` in
+`app/build.gradle.kts`, then repeat step 8. Play handles delivery and auto-updates from
+then on.
+
+> [!NOTE]
+> **Play App Signing.** Google re-signs your bundle with its own key by default and
+> holds the app-signing key for you. Your `nplayer-release.jks` then acts as the
+> *upload* key. This is the recommended setting — losing an upload key can be
+> recovered, losing an app-signing key cannot.
+
+## Publishing to F-Droid
+
+F-Droid builds from source and publishes its own signature, so there is nothing to
+upload by hand. To be listed you need a public source repo, a permissive licence (this
+project is MIT), and no proprietary dependencies or tracking. Add an
+[`fdroiddata`](https://gitlab.com/fdroid/fdroiddata) metadata file
+(`metadata/dev.nskweb.nplayer.yml`) with the repo URL, build recipe
+(`./gradlew :app:assembleRelease`), and version tags, then open a merge request. F-Droid
+must be able to reproduce the build, so avoid anything that pulls a binary at build time.
+
+## Signing a release
+
+Release signing is driven by `keystore.properties` at `NPlayer/keystore.properties`:
+
+```properties
+storeFile=/absolute/path/to/keystore.jks
+storePassword=…
+keyAlias=…
+keyPassword=…
+```
+
+When the file is absent the release build is signed with the debug key — that is what
+keeps the GitHub release installable with no setup. Add the file (and never commit it)
+when you want a real signature, for Play or for a signed direct download.
 
 ### Keep the APK out of git
 
@@ -506,10 +687,13 @@ covers the small formatting helpers that are easy to get wrong and easy to miss:
 text across the hour boundary and unknown durations, and size text at each unit boundary.
 `PlayerSettingsTest` covers the player's pure helpers: speed stepping up and down the
 preset ladder, clock formatting under and over an hour, the repeat and resize cycles, and
-the A–B repeat's active-state rules. `PlaylistCodecTest` covers playlist serialisation and
-the duplicate and missing-item rules, and `EqualizerSettingsTest` covers the millibel
-range mapping and preset matching. These run on the JVM with no device, because the
-helpers are pure functions with no Android dependencies.
+the A–B repeat's active-state rules. `SubtitleFilesTest` and `SubtitleTracksTest` cover
+subtitle matching: which sidecar names belong to which media file, which extensions the
+extractors accept, when a file-name tag is a language rather than a release tag, and the
+order sidecars and embedded tracks are listed in. `PlaylistCodecTest` covers playlist
+serialisation and the duplicate and missing-item rules, and `EqualizerSettingsTest`
+covers the millibel range mapping and preset matching. These run on the JVM with no
+device, because the helpers are pure functions with no Android dependencies.
 
 Two tests go further and drive the real Android code through Robolectric, still with no
 device: `MediaStoreRepositoryTest` runs the repository against a fake MediaStore provider

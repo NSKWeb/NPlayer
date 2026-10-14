@@ -4,6 +4,7 @@ import android.app.Activity
 import android.content.Context
 import android.content.ContextWrapper
 import android.content.pm.ActivityInfo
+import android.view.View
 import android.view.ViewGroup
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -14,8 +15,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -23,13 +22,17 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.AspectRatio
 import androidx.compose.material.icons.filled.Bedtime
 import androidx.compose.material.icons.filled.Brightness6
 import androidx.compose.material.icons.filled.Equalizer
@@ -48,8 +51,8 @@ import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material.icons.filled.Speed
 import androidx.compose.material.icons.filled.Subtitles
 import androidx.compose.material.icons.filled.Timer
-import androidx.compose.material.icons.filled.AspectRatio
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -72,6 +75,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -80,12 +84,16 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.ui.PlayerView
 import com.example.nplayer.MainActivity
-import com.example.nplayer.playback.SPEED_PRESETS
+import com.example.nplayer.playback.QUICK_SEEK_STEPS
 import com.example.nplayer.playback.SLEEP_TIMER_PRESETS
+import com.example.nplayer.playback.SPEED_PRESETS
 import com.example.nplayer.playback.formatClock
 import com.example.nplayer.playback.formatSleepRemaining
 import com.example.nplayer.playback.formatSpeed
 import kotlinx.coroutines.delay
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.ui.text.style.TextAlign
+import com.example.nplayer.playback.SubtitleTrack
 
 @UnstableApi
 @Composable
@@ -109,10 +117,16 @@ fun PlayerScreen(
     var showSpeedSheet by remember { mutableStateOf(false) }
     var showEqualizer by remember { mutableStateOf(false) }
     var showSleepSheet by remember { mutableStateOf(false) }
+    var showSubtitleSheet by remember { mutableStateOf(false) }
 
     val subtitlePicker = rememberLauncherForActivityResult(
         ActivityResultContracts.OpenDocument(),
-    ) { uri -> uri?.let { viewModel.attachSubtitle(it.toString()) } }
+    ) { uri ->
+        uri?.let {
+            viewModel.attachSubtitle(it.toString())
+            showSubtitleSheet = true
+        }
+    }
 
     DisposableEffect(Unit) {
         viewModel.onEnter(itemKey, queuePlaylistId)
@@ -212,12 +226,16 @@ fun PlayerScreen(
                         ViewGroup.LayoutParams.MATCH_PARENT,
                     )
                     setShowBuffering(PlayerView.SHOW_BUFFERING_WHEN_PLAYING)
+                    // Captions are drawn by the Compose overlay below, so the view's
+                    // own subtitle view is hidden to avoid showing each line twice.
+                    subtitleView?.visibility = View.GONE
                 }
             },
             update = { view ->
                 view.player = state.player
                 view.resizeMode = state.resizeMode.media3Mode
                 view.scaleX = if (state.mirrored) -1f else 1f
+                view.subtitleView?.visibility = View.GONE
             },
             modifier = Modifier.fillMaxSize(),
         )
@@ -241,11 +259,37 @@ fun PlayerScreen(
 
         gestureHint?.let {
             Surface(
-                color = Color.Black.copy(alpha = 0.6f),
-                shape = MaterialTheme.shapes.medium,
+                color = Color.Black.copy(alpha = 0.7f),
+                shape = RoundedCornerShape(14.dp),
                 modifier = Modifier.align(Alignment.Center),
             ) {
-                Text(it, color = Color.White, modifier = Modifier.padding(16.dp))
+                Text(
+                    it,
+                    color = Color.White,
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 14.dp),
+                )
+            }
+        }
+
+        // Captions sit above the controls so they stay on screen when the overlay
+        // auto-hides, which is when a subtitle is most useful.
+        state.subtitleText?.let { caption ->
+            Surface(
+                color = Color.Black.copy(alpha = 0.6f),
+                shape = RoundedCornerShape(10.dp),
+                modifier = Modifier
+                    .align(Alignment.BottomCenter)
+                    .padding(horizontal = 24.dp)
+                    .padding(bottom = if (controlsVisible) 190.dp else 48.dp),
+            ) {
+                Text(
+                    caption,
+                    color = Color.White,
+                    textAlign = TextAlign.Center,
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
+                )
             }
         }
 
@@ -293,9 +337,22 @@ fun PlayerScreen(
                     onPictureInPicture = { (activity as? MainActivity)?.enterPictureInPicture() },
                     onEqualizer = { showEqualizer = true },
                     equalizerEnabled = equalizerState.enabled,
-                    onSubtitles = { subtitlePicker.launch(arrayOf("*/*")) },
+                    onSubtitles = { showSubtitleSheet = true },
+                    subtitleActive = state.activeSubtitle != null,
+                    subtitleCount = state.subtitleTracks.size,
                 )
             }
+        }
+
+        if (showSubtitleSheet) {
+            SubtitleSheet(
+                tracks = state.subtitleTracks,
+                active = state.activeSubtitle,
+                onPick = { viewModel.selectSubtitle(it); showSubtitleSheet = false },
+                onTurnOff = { viewModel.selectSubtitle(null); showSubtitleSheet = false },
+                onBrowse = { subtitlePicker.launch(arrayOf("*/*")) },
+                onDismiss = { showSubtitleSheet = false },
+            )
         }
 
         if (showEqualizer) {
@@ -359,16 +416,21 @@ private fun ControlsOverlay(
     onNight: () -> Unit,
     onLock: () -> Unit,
     onRotate: () -> Unit,
-    onSubtitles: () -> Unit,
     onPictureInPicture: () -> Unit,
     onEqualizer: () -> Unit,
     equalizerEnabled: Boolean,
+    onSubtitles: () -> Unit,
+    subtitleActive: Boolean,
+    subtitleCount: Int,
 ) {
     val playing = state.controller?.isPlaying == true
+    val shown = if (scrubbing) scrubPosition.toLong() else position
+    val remaining = (duration - shown).coerceAtLeast(0L)
+
     Column(
         Modifier
             .fillMaxSize()
-            .background(Color.Black.copy(alpha = 0.35f)),
+            .background(Color.Black.copy(alpha = 0.38f)),
     ) {
         Row(
             Modifier
@@ -384,6 +446,7 @@ private fun ControlsOverlay(
                 color = Color.White,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
+                style = MaterialTheme.typography.titleSmall,
                 modifier = Modifier.weight(1f),
             )
             state.sleepRemainingMillis?.let {
@@ -404,20 +467,44 @@ private fun ControlsOverlay(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             IconButton(onClick = { onSeekBy(-10_000) }) {
-                Icon(Icons.Filled.Replay10, contentDescription = "Back 10 seconds", tint = Color.White, modifier = Modifier.size(36.dp))
+                Icon(Icons.Filled.Replay10, contentDescription = "Back 10 seconds", tint = Color.White, modifier = Modifier.size(38.dp))
             }
-            Spacer(Modifier.width(24.dp))
-            IconButton(onClick = onTogglePlay) {
+            Spacer(Modifier.width(20.dp))
+            FilledTonalIconButton(
+                onClick = onTogglePlay,
+                modifier = Modifier.size(68.dp),
+                shape = RoundedCornerShape(50),
+            ) {
                 Icon(
                     if (playing) Icons.Filled.Pause else Icons.Filled.PlayArrow,
                     contentDescription = if (playing) "Pause" else "Play",
                     tint = Color.White,
-                    modifier = Modifier.size(56.dp),
+                    modifier = Modifier.size(34.dp),
                 )
             }
-            Spacer(Modifier.width(24.dp))
+            Spacer(Modifier.width(20.dp))
             IconButton(onClick = { onSeekBy(10_000) }) {
-                Icon(Icons.Filled.Forward10, contentDescription = "Forward 10 seconds", tint = Color.White, modifier = Modifier.size(36.dp))
+                Icon(Icons.Filled.Forward10, contentDescription = "Forward 10 seconds", tint = Color.White, modifier = Modifier.size(38.dp))
+            }
+        }
+
+        Spacer(Modifier.height(10.dp))
+
+        // Long jumps for films: +20/+40 min forward and back, without dragging.
+        Row(
+            Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            QUICK_SEEK_STEPS.forEach { step ->
+                TextButton(onClick = { onSeekBy(step.deltaMillis) }) {
+                    Text(
+                        step.label,
+                        color = Color.White,
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.Medium,
+                    )
+                }
             }
         }
 
@@ -430,7 +517,7 @@ private fun ControlsOverlay(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                formatClock(if (scrubbing) scrubPosition.toLong() else position),
+                formatClock(shown),
                 color = Color.White,
                 style = MaterialTheme.typography.labelMedium,
             )
@@ -443,7 +530,12 @@ private fun ControlsOverlay(
                     .weight(1f)
                     .padding(horizontal = 8.dp),
             )
-            Text(formatClock(duration), color = Color.White, style = MaterialTheme.typography.labelMedium)
+            // Time left in the file, so the length is readable at a glance.
+            Text(
+                if (duration > 0) "−${formatClock(remaining)}" else formatClock(duration),
+                color = Color.White,
+                style = MaterialTheme.typography.labelMedium,
+            )
         }
 
         Row(
@@ -454,11 +546,7 @@ private fun ControlsOverlay(
             horizontalArrangement = Arrangement.spacedBy(4.dp),
         ) {
             OverlayButton(Icons.Filled.Speed, formatSpeed(state.speed), onSpeed)
-            OverlayButton(
-                Icons.Filled.AspectRatio,
-                state.resizeMode.label,
-                onResize,
-            )
+            OverlayButton(Icons.Filled.AspectRatio, state.resizeMode.label, onResize)
             OverlayButton(
                 if (state.repeatMode.media3Mode == 1) Icons.Filled.RepeatOne else Icons.Filled.Repeat,
                 state.repeatMode.label.removePrefix("Repeat ").replaceFirstChar { it.uppercase() },
@@ -473,7 +561,12 @@ private fun ControlsOverlay(
             OverlayButton(Icons.Filled.ScreenRotation, "Rotate", onRotate)
             OverlayButton(Icons.Filled.PictureInPictureAlt, "PiP", onPictureInPicture)
             OverlayButton(Icons.Filled.Equalizer, "Equalizer", onEqualizer, active = equalizerEnabled)
-            OverlayButton(Icons.Filled.Subtitles, "Subtitle", onSubtitles)
+            OverlayButton(
+                Icons.Filled.Subtitles,
+                if (subtitleCount > 1) "Subtitle ($subtitleCount)" else "Subtitle",
+                onSubtitles,
+                active = subtitleActive,
+            )
         }
     }
 }
@@ -561,6 +654,62 @@ private fun EqualizerDialog(
                             )
                         }
                     }
+                }
+            }
+        },
+        confirmButton = { TextButton(onClick = onDismiss) { Text("Close") } },
+    )
+}
+
+@Composable
+private fun SubtitleSheet(
+    tracks: List<SubtitleTrack>,
+    active: SubtitleTrack?,
+    onPick: (SubtitleTrack) -> Unit,
+    onTurnOff: () -> Unit,
+    onBrowse: () -> Unit,
+    onDismiss: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Subtitles") },
+        text = {
+            Column(Modifier.fillMaxHeight(0.7f).verticalScroll(rememberScrollState())) {
+                if (tracks.isEmpty()) {
+                    Text(
+                        "No subtitle files were found next to this item, and it has no " +
+                            "embedded text track. You can still open a file by hand.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                } else {
+                    tracks.forEach { track ->
+                        TextButton(onClick = { onPick(track) }, modifier = Modifier.fillMaxWidth()) {
+                            Text(
+                                text = if (track == active) "✓ ${track.label}" else track.label,
+                                color = if (track == active) {
+                                    MaterialTheme.colorScheme.primary
+                                } else {
+                                    MaterialTheme.colorScheme.onSurface
+                                },
+                                modifier = Modifier.weight(1f),
+                            )
+                            Text(
+                                if (track.embedded) "Embedded" else "File",
+                                style = MaterialTheme.typography.labelSmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            )
+                        }
+                    }
+                    Spacer(Modifier.height(8.dp))
+                    HorizontalDivider()
+                }
+                Spacer(Modifier.height(8.dp))
+                TextButton(onClick = onTurnOff, modifier = Modifier.fillMaxWidth()) {
+                    Text("Turn off")
+                }
+                TextButton(onClick = onBrowse, modifier = Modifier.fillMaxWidth()) {
+                    Text("Open a file…")
                 }
             }
         },

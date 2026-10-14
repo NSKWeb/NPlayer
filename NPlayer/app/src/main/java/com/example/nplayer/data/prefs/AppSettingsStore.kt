@@ -19,6 +19,8 @@ private val Context.dataStore by preferencesDataStore(name = "nplayer_settings")
 data class AppSettings(
     val themeMode: ThemeMode = ThemeMode.SYSTEM,
     val biometricLockEnabled: Boolean = false,
+    /** When true, the wallpaper palette replaces the app's own colours. */
+    val dynamicColor: Boolean = false,
     val favourites: Set<String> = emptySet(),
     /** Items the user has moved into the private folder; hidden from every list. */
     val privateItems: Set<String> = emptySet(),
@@ -30,6 +32,7 @@ class AppSettingsStore @Inject constructor(
 ) {
     private val themeModeKey = stringPreferencesKey("theme_mode")
     private val biometricKey = booleanPreferencesKey("biometric_lock")
+    private val dynamicColorKey = booleanPreferencesKey("dynamic_color")
     private val favouritesKey = stringSetPreferencesKey("favourites")
     private val privateItemsKey = stringSetPreferencesKey("private_items")
 
@@ -37,6 +40,7 @@ class AppSettingsStore @Inject constructor(
         AppSettings(
             themeMode = ThemeMode.fromStorage(prefs[themeModeKey]),
             biometricLockEnabled = prefs[biometricKey] ?: false,
+            dynamicColor = prefs[dynamicColorKey] ?: false,
             favourites = prefs[favouritesKey] ?: emptySet(),
             privateItems = prefs[privateItemsKey] ?: emptySet(),
         )
@@ -50,6 +54,10 @@ class AppSettingsStore @Inject constructor(
 
     suspend fun setBiometricLock(enabled: Boolean) {
         context.dataStore.edit { it[biometricKey] = enabled }
+    }
+
+    suspend fun setDynamicColor(enabled: Boolean) {
+        context.dataStore.edit { it[dynamicColorKey] = enabled }
     }
 
     /** Adds or removes [key], returning the new favourite set. */

@@ -53,9 +53,24 @@ class MediaLibrary @Inject constructor(
         _isScanning.value = true
         try {
             _items.value = repository.scan()
+            _subtitleFiles.value = repository.scanSubtitles()
         } finally {
             _isScanning.value = false
         }
+    }
+
+    /** Subtitle files on the device, keyed by lower-case file name. */
+    private val _subtitleFiles = MutableStateFlow<Map<String, SubtitleFile>>(emptyMap())
+
+    /**
+     * Sidecar subtitle files sitting in [item]'s folder whose name matches the media
+     * file. Returns empty when the item is unknown or nothing matches.
+     */
+    fun sidecarsFor(item: MediaItem): List<SubtitleFile> {
+        val folder = normalizeFolder(item.folder)
+        return _subtitleFiles.value.values
+            .filter { normalizeFolder(it.folder) == folder && sidecarMatchesMedia(item.displayName, it.name) }
+            .sortedBy { it.name.lowercase() }
     }
 
     /** Scans only if nothing has been loaded yet, so first launch populates itself. */

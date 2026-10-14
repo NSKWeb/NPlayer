@@ -5,6 +5,17 @@ import android.net.Uri
 /** Whether a scanned item is a video or an audio track. */
 enum class MediaKind { VIDEO, AUDIO }
 
+/**
+ * A subtitle file found on the device, matched to media by file name. [uri] is the
+ * `content://` MediaStore location Media3 reads the cues from.
+ */
+data class SubtitleFile(
+    val name: String,
+    val uri: Uri,
+    /** Containing folder relative to storage, matching [MediaItem.folder]. */
+    val folder: String = "",
+)
+
 /** Formats a duration as "1h 2m" or "5m"; null when the duration is unknown. */
 internal fun formatDuration(millis: Long): String? {
     if (millis <= 0) return null
@@ -38,9 +49,17 @@ data class MediaItem(
     val resolution: String? = null,
     /** Containing folder relative to storage, e.g. `"Movies/2024"`; blank at the root. */
     val folder: String = "",
+    /** The file name on disk, e.g. `"Trip.2024.mp4"`; used to match sidecar subtitles. */
+    val fileName: String = "",
 ) {
     /** Stable identity for navigation and resume positions. */
     val key: String get() = uri.toString()
+
+    /**
+     * The name a sidecar subtitle has to share a stem with. Falls back to the title
+     * when the scan did not supply a file name.
+     */
+    val displayName: String get() = fileName.ifBlank { title }
 
     val durationLabel: String? get() = formatDuration(durationMillis)
 
