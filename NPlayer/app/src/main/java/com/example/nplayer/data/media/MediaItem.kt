@@ -36,6 +36,8 @@ data class MediaItem(
     val album: String? = null,
     val artist: String? = null,
     val resolution: String? = null,
+    /** Containing folder relative to storage, e.g. `"Movies/2024"`; blank at the root. */
+    val folder: String = "",
 ) {
     /** Stable identity for navigation and resume positions. */
     val key: String get() = uri.toString()

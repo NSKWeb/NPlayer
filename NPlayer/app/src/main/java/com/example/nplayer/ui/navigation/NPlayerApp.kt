@@ -4,6 +4,7 @@ import android.net.Uri
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
@@ -24,6 +25,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.example.nplayer.ui.detail.DetailScreen
 import com.example.nplayer.ui.favourites.FavouritesScreen
+import com.example.nplayer.ui.folders.FoldersScreen
 import com.example.nplayer.ui.home.HomeScreen
 import com.example.nplayer.ui.player.PlayerScreen
 import com.example.nplayer.ui.search.SearchScreen
@@ -32,6 +34,7 @@ import com.example.nplayer.ui.settings.SettingsScreen
 object Routes {
     const val HOME = "home"
     const val SEARCH = "search"
+    const val FOLDERS = "folders"
     const val FAVOURITES = "favourites"
     const val SETTINGS = "settings"
     const val DETAIL = "detail/{itemKey}"
@@ -50,6 +53,7 @@ private data class Tab(val route: String, val label: String, val icon: ImageVect
 private val tabs = listOf(
     Tab(Routes.HOME, "Home", Icons.Filled.Home),
     Tab(Routes.SEARCH, "Search", Icons.Filled.Search),
+    Tab(Routes.FOLDERS, "Folders", Icons.Filled.Folder),
     Tab(Routes.FAVOURITES, "Favourites", Icons.Filled.Favorite),
     Tab(Routes.SETTINGS, "Settings", Icons.Filled.Settings),
 )
@@ -94,6 +98,9 @@ fun NPlayerApp() {
             }
             composable(Routes.SEARCH) {
                 SearchScreen(onOpenDetail = { navController.navigate(Routes.detail(it)) })
+            }
+            composable(Routes.FOLDERS) {
+                FoldersScreen(onOpenDetail = { navController.navigate(Routes.detail(it)) })
             }
             composable(Routes.FAVOURITES) {
                 FavouritesScreen(onOpenDetail = { navController.navigate(Routes.detail(it)) })

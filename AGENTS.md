@@ -50,8 +50,17 @@ the gesture handlers live in `ui/player/PlayerViewModel.kt`. Pure, unit-tested h
 `playback/PlayerSettings.kt` — put new pure logic there, not in the composable.
 
 Remaining Arc-Player-parity work, not yet started: equalizer, picture-in-picture,
-playlists, folder/SD-card browsing, private folder, subtitle downloader (needs
-`INTERNET`, which the app deliberately does not request), and FFmpeg for RMVB/WMV/DivX.
+playlists, private folder, subtitle downloader (needs `INTERNET`, which the app
+deliberately does not request), and FFmpeg for RMVB/WMV/DivX.
+
+### Folders
+
+`data/media/FolderTree.kt` holds the pure tree logic — path normalisation, storage-root
+stripping, child listing with recursive counts, and breadcrumbs — and is unit-tested in
+`FolderTreeTest`. Keep it free of Android types. `MediaStoreRepository` supplies the
+containing folder from `RELATIVE_PATH`, which exists only from API 29; on older devices
+the folder is empty and everything appears at the root, so the tree stays one level deep
+there rather than throwing on an unknown projection column.
 
 ## Conventions
 

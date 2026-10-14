@@ -24,6 +24,20 @@ class MediaStoreRepository @Inject constructor(
         (queryVideos() + queryAudio()).sortedByDescending { it.dateAddedSeconds }
     }
 
+    /**
+     * `RELATIVE_PATH` only exists from API 29. Asking for an unknown column throws,
+     * which [runQuery] would swallow into an empty library, so the folder column is
+     * requested only where it exists and older devices get an empty folder.
+     */
+    private val hasRelativePath: Boolean
+        get() = Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q
+
+    private val folderColumns: Array<String>
+        get() = if (hasRelativePath) arrayOf(MediaStore.MediaColumns.RELATIVE_PATH) else emptyArray()
+
+    private fun android.database.Cursor.folderOrRoot(index: Int): String =
+        if (hasRelativePath) normalizeFolder(getStringOrNull(index)) else ""
+
     private fun queryVideos(): List<MediaItem> {
         val collection = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             MediaStore.Video.Media.getContentUri(MediaStore.VOLUME_EXTERNAL)
@@ -39,7 +53,7 @@ class MediaStoreRepository @Inject constructor(
             MediaStore.Video.Media.DATE_ADDED,
             MediaStore.Video.Media.WIDTH,
             MediaStore.Video.Media.HEIGHT,
-        )
+        ) + folderColumns
 
         return runQuery(collection, projection) { cursor ->
             val id = cursor.getLong(0)
@@ -55,6 +69,7 @@ class MediaStoreRepository @Inject constructor(
                 sizeBytes = cursor.getLongOrNull(3) ?: 0L,
                 dateAddedSeconds = cursor.getLongOrNull(4) ?: 0L,
                 resolution = if (width != null && height != null && height > 0) "${width}x$height" else null,
+                folder = cursor.folderOrRoot(7),
             )
         }
     }
@@ -74,7 +89,7 @@ class MediaStoreRepository @Inject constructor(
             MediaStore.Audio.Media.DATE_ADDED,
             MediaStore.Audio.Media.ALBUM,
             MediaStore.Audio.Media.ARTIST,
-        )
+        ) + folderColumns
 
         return runQuery(collection, projection) { cursor ->
             val id = cursor.getLong(0)
@@ -88,6 +103,7 @@ class MediaStoreRepository @Inject constructor(
                 dateAddedSeconds = cursor.getLongOrNull(4) ?: 0L,
                 album = cursor.getStringOrNull(5),
                 artist = cursor.getStringOrNull(6),
+                folder = cursor.folderOrRoot(7),
             )
         }
     }

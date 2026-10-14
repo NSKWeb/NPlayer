@@ -45,6 +45,18 @@ class MediaLibrary @Inject constructor(
 
     fun audio(): List<MediaItem> = _items.value.filter { it.kind == MediaKind.AUDIO }
 
+    /** The immediate child folders of [folder] that contain something, with counts. */
+    fun foldersIn(folder: String): List<FolderSummary> =
+        childFolders(folder, _items.value.map { it.folder })
+
+    /** Items directly inside [folder], newest first, excluding items in sub-folders. */
+    fun itemsIn(folder: String): List<MediaItem> {
+        val normalized = normalizeFolder(folder)
+        return _items.value
+            .filter { normalizeFolder(it.folder) == normalized }
+            .sortedByDescending { it.dateAddedSeconds }
+    }
+
     fun search(query: String): List<MediaItem> {
         if (query.isBlank()) return emptyList()
         return _items.value.filter { item ->

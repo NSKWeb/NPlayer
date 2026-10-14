@@ -46,6 +46,7 @@ files are there.
 |---|---|
 | **No server, no account** | The sign-in screen is gone. There is nothing to configure. |
 | **Local library** | Videos and audio are read from Android's own MediaStore, newest first. |
+| **Folder browsing** | A Folders tab walks the device tree with a breadcrumb trail, so files outside the top level are reachable. |
 | **On-device resume** | Positions are saved every five seconds and restored on Play; nothing is uploaded. |
 | **Favourites** | Star any file and it collects on the Favourites tab. |
 | **Light / dark / system** | A segmented theme control in Settings, remembered across launches. |
@@ -193,11 +194,12 @@ button to ask again. Nothing is scanned until you grant it.
 | **Search** | Filters the on-device library by title, artist, or album, from two characters | `SearchViewModel` |
 | **Detail** | Thumbnail, file metadata, a Play or Resume button, and a favourite toggle | `DetailViewModel` |
 | **Player** | Compose controls overlay over the video surface: gestures, speed, aspect, A–B repeat, sleep timer, and more | `PlayerViewModel` |
+| **Folders** | Browses the on-device tree: a breadcrumb trail, sub-folders with recursive counts, and the files directly inside | `FoldersViewModel` |
 | **Favourites** | Everything you have starred, in one grid | `FavouritesViewModel` |
 | **Settings** | Light/dark/system theme, biometric lock, and about | `SettingsViewModel` |
 
-The bottom bar carries Home, Search, Favourites, and Settings. Detail and Player are
-full-screen destinations pushed on top, which is why the bar hides for them.
+The bottom bar carries Home, Search, Folders, Favourites, and Settings. Detail and Player
+are full-screen destinations pushed on top, which is why the bar hides for them.
 
 ## Architecture
 
@@ -217,7 +219,7 @@ NPlayer/app/src/main/java/com/example/nplayer/
 │   └── prefs/        AppSettingsStore, PlaybackPositionStore, ThemeMode
 ├── playback/         PlaybackService (MediaSessionService), PlaybackController,
 │                     PlayerSettings (pure helpers: speed, clocks, A–B model)
-└── ui/               Compose: theme, navigation, components, six screens
+└── ui/               Compose: theme, navigation, components, seven screens
 ```
 
 ### Reading the library
@@ -444,11 +446,13 @@ APK as artifacts.
 
 ### Tests
 
-`MediaItemFormattingTest` covers the small formatting helpers that are easy to get wrong
+`FolderTreeTest` covers the folder tree: path normalisation, storage-root stripping,
+parent and child resolution, recursive counts, and breadcrumbs. `MediaItemFormattingTest`
+covers the small formatting helpers that are easy to get wrong
 and easy to miss: duration text across the hour boundary and unknown durations, and size
 text at each unit boundary. `PlayerSettingsTest` covers the player's pure helpers: speed
 stepping up and down the preset ladder, clock formatting under and over an hour, the
-repeat and resize cycles, and the A–B repeat's active-state rules. Both run on the JVM
+repeat and resize cycles, and the A–B repeat's active-state rules. All three run on the JVM
 with no device, because the helpers are pure functions with no Android dependencies.
 
 ### Signing a release
