@@ -74,8 +74,26 @@ class MediaLibrary @Inject constructor(
         find(key)?.takeIf { it.key !in hiddenKeys.value }
 
     /** Visible items only; anything in the private folder is withheld. */
-    private fun visible(): List<MediaItem> =
-        _items.value.filterNot { it.key in hiddenKeys.value }
+    private var cacheItems: List<MediaItem>? = null
+    private var cacheHidden: Set<String>? = null
+    private var cacheVisible: List<MediaItem> = emptyList()
+
+    /**
+     * A screen load calls this more than once (Home asks for videos and audio,
+     * Folders for sub-folders and items), so the filtered list is reused until the
+     * scan or the hidden set actually changes.
+     */
+    @Synchronized
+    private fun visible(): List<MediaItem> {
+        val items = _items.value
+        val hidden = hiddenKeys.value
+        if (items !== cacheItems || hidden !== cacheHidden) {
+            cacheItems = items
+            cacheHidden = hidden
+            cacheVisible = items.filterNot { it.key in hidden }
+        }
+        return cacheVisible
+    }
 
     fun videos(): List<MediaItem> = visible().filter { it.kind == MediaKind.VIDEO }
 

@@ -65,7 +65,7 @@ class PlayerViewModel @Inject constructor(
     /** [queuePlaylistId] plays the whole playlist as a queue instead of one item. */
     fun onEnter(itemKey: String, queuePlaylistId: String? = null) {
         viewModelScope.launch {
-            val controller = playbackController.connect().get()
+            val controller = playbackController.connectAndAwait()
             _state.update {
                 it.copy(
                     player = controller,

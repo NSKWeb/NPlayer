@@ -43,8 +43,11 @@ code (`docs/qr-apk.svg`) all depend on it. If you rename the artifact, update th
 and regenerate the QR.
 
 CI (`.github/workflows/android.yml`) runs `testDebugUnitTest` then `assembleDebug` on
-every push and pull request. `release.yml` builds and publishes the debug APK as a
-release asset on a `v*` tag.
+every push and pull request. `release.yml` builds `:app:assembleRelease` and publishes
+that minified APK as a release asset on a `v*` tag — the published download is the
+release build, not debug, because it is several times smaller and faster. Release
+signing falls back to the debug key when `keystore.properties` is absent, so the asset
+is installable without a keystore.
 
 ### Player controls
 
@@ -77,6 +80,9 @@ throwing.
   in `data/media/MediaItem.kt` are the model for that.
 - A `content://` URI is the contract between the library, playback, and thumbnails. Do
   not introduce a second identity for an item.
+- Never block the main thread on `PlaybackController.connect()`'s future. Binding the
+  `MediaSessionService` completes on the main thread, so `.get()` there deadlocks and
+  playback silently never starts. Use `connectAndAwait()`, which suspends instead.
 - The private folder is a visibility filter, not a second store. Keys live in
   `AppSettingsStore.privateItems`; `MediaLibrary` withholds them from `videos`, `audio`,
   `itemsIn`, `foldersIn`, `search`, and `findVisible`. Only the gated private screen reads

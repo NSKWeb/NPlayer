@@ -20,7 +20,10 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
 
 /**
  * UI-facing wrapper around the Media3 [MediaController]. Plays a device file by its
@@ -43,6 +46,13 @@ class PlaybackController @Inject constructor(
         future.addListener({ controller = future.get() }, MoreExecutors.directExecutor())
         return future
     }
+
+    /**
+     * Connects and suspends until the controller is ready. Never block the main
+     * thread on [connect]'s future: binding the service needs the main thread to
+     * complete, so `.get()` there deadlocks and playback never starts.
+     */
+    suspend fun connectAndAwait(): MediaController = connect().await()
 
     suspend fun play(item: MediaFile, subtitleUri: String? = null) {
         val startPosition = positionStore.position(item.key)
@@ -140,4 +150,16 @@ class PlaybackController @Inject constructor(
         controller = null
         currentKey = null
     }
+}
+
+/** Suspends until [this] future completes, without blocking any thread. */
+private suspend fun <T> ListenableFuture<T>.await(): T = suspendCancellableCoroutine { cont ->
+    addListener(
+        {
+            runCatching { get() }
+                .onSuccess { cont.resume(it) }
+                .onFailure { cont.resumeWithException(it) }
+        },
+        MoreExecutors.directExecutor(),
+    )
 }

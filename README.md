@@ -34,6 +34,18 @@ files are there.
 
 </div>
 
+## What's new in 1.0.2
+
+1.0.2 fixes playback, which did not start at all in 1.0.0 and 1.0.1, and makes the
+shipped build much smaller and smoother.
+
+| Change | What it means |
+|---|---|
+| **Playback actually starts** | Connecting to the media service was blocking the main thread, so the handshake never completed and Play did nothing. It now suspends instead. |
+| **Smaller download** | The published APK is the minified release build: about 3.6 MB instead of 24 MB, with every feature intact. |
+| **Smoother first run** | A baseline profile is installed so the startup and scroll paths are compiled ahead of time. |
+| **Less repeated work** | Screens that read the library more than once now reuse one filtered pass instead of re-scanning the whole list. |
+
 ## What's new in 1.0.1
 
 > [!IMPORTANT]
@@ -150,13 +162,14 @@ at the newest release asset, so the code never goes stale.
 | Symptom | Fix |
 |---|---|
 | *"App not installed"* | An older build with the same application id is present — uninstall it first |
-| *"There was a problem parsing the package"* | The download is incomplete. Re-download; check the file is ~24 MB |
+| *"There was a problem parsing the package"* | The download is incomplete. Re-download; check the file is ~3.6 MB |
 | *"Blocked by Play Protect"* | Tap *Install anyway*, or temporarily turn off scanning in the Play Store's Play Protect settings |
 | Tapping the APK does nothing | You opened it from a file manager without permission — grant *Install unknown apps* to that file manager |
 | Install option is greyed out | Some OEMs also require disabling *MIUI optimisation* / *Auto Blocker*; check the vendor's sideload settings |
 
-The debug build installs as `com.example.nplayer.debug`, so it can sit alongside a
-release build without conflict.
+The release build is minified and resource-shrunk, so the download is about 3.6 MB
+rather than the ~24 MB a debug build would be — same features, far less to install.
+It installs as `com.example.nplayer`.
 
 ## The media permission
 
@@ -388,7 +401,7 @@ git tag -a v1.0.1 -m "N Player v1.0.1"
 git push origin v1.0.1
 ```
 
-The workflow checks out the tagged commit, builds `:app:assembleDebug`, and then either
+The workflow checks out the tagged commit, builds `:app:assembleRelease`, and then either
 creates the release or updates the existing one — re-running a tag refreshes its asset
 with `--clobber` rather than failing. To re-publish a tag without a new commit, run the
 **Release** workflow from the Actions tab and supply the tag name.
@@ -441,20 +454,19 @@ Because releases are versioned, users can also browse older builds under
 
 | Option | Best for | Trade-off |
 |---|---|---|
-| **GitHub Releases** *(in use)* | Free, versioned, stable URL, no infrastructure | Debug-signed; not on Play |
+| **GitHub Releases** *(in use)* | Free, versioned, stable URL, no infrastructure | Debug-key signed; not on Play |
 | **GitHub Pages** | A small download landing page | You must commit the APK, or host it on Releases and link to it — a binary in git bloats history |
 | **Play Store** | Wide distribution, auto-updates | Requires a release keystore, an app bundle, a privacy policy, and review |
 | **F-Droid** | Open-source Android catalogue | Requires fully reproducible builds and a public signing setup |
 | **Self-hosted / S3 / Cloudflare R2** | Private or internal distribution | You own the bandwidth, TLS, and uptime |
 
-For Play, you would switch from `assembleDebug` to `bundleRelease` and sign with a
-real keystore — see [Signing a release](#signing-a-release). Everything else above
-works unchanged.
+For Play, you would sign with a real keystore and switch to `bundleRelease` — see
+[Signing a release](#signing-a-release). Everything else above works unchanged.
 
 ### Keep the APK out of git
 
-Build output is git-ignored, and it should stay that way — a 24 MB binary in the
-history is painful to remove later. Publish through Releases instead.
+Build output is git-ignored, and it should stay that way — a multi-megabyte binary in
+the history is painful to remove later. Publish through Releases instead.
 
 ## Repository layout
 

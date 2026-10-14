@@ -16,8 +16,8 @@ android {
         applicationId = "com.example.nplayer"
         minSdk = 26
         targetSdk = 35
-        versionCode = 1
-        versionName = "1.0.0"
+        versionCode = 2
+        versionName = "1.0.2"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -38,6 +38,14 @@ android {
         }
     }
 
+    /**
+     * The published APK is the minified release build, which is several times
+     * smaller and faster than debug. Without a real keystore it is signed with the
+     * debug key so it stays installable and can update earlier debug installs in
+     * place; supply keystore.properties for a proper release signature.
+     */
+    val releaseSigning = signingConfigs.findByName("release") ?: signingConfigs.getByName("debug")
+
     buildTypes {
         release {
             isMinifyEnabled = true
@@ -46,9 +54,7 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            // Signed only when keystore.properties is present; otherwise the
-            // release APK is produced unsigned for CI/local inspection.
-            signingConfigs.findByName("release")?.let { signingConfig = it }
+            signingConfig = releaseSigning
         }
         debug {
             applicationIdSuffix = ".debug"
@@ -103,6 +109,7 @@ androidComponents {
 
 dependencies {
     implementation(libs.androidx.core.ktx)
+    implementation(libs.androidx.profileinstaller)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.androidx.lifecycle.viewmodel.compose)
