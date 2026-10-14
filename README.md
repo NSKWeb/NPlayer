@@ -47,8 +47,10 @@ files are there.
 | **No server, no account** | The sign-in screen is gone. There is nothing to configure. |
 | **Local library** | Videos and audio are read from Android's own MediaStore, newest first. |
 | **Folder browsing** | A Folders tab walks the device tree with a breadcrumb trail, so files outside the top level are reachable. |
+| **Playlists** | Group videos and tracks into named playlists; playing one queues the whole list. |
 | **On-device resume** | Positions are saved every five seconds and restored on Play; nothing is uploaded. |
 | **Favourites** | Star any file and it collects on the Favourites tab. |
+| **Private folder** | Hide any item behind a biometric check; hidden items vanish from every other list. |
 | **Light / dark / system** | A segmented theme control in Settings, remembered across launches. |
 | **Player controls** | A full controls overlay: gestures, 0.25x–4x speed, aspect ratio, A–B repeat, sleep timer, repeat/shuffle, screen lock, mirror, night mode, auto-rotate, and subtitle attach. |
 | **No `INTERNET` permission** | The app cannot make a network request, by design. |
@@ -72,12 +74,13 @@ below is local playback control, no network involved.
 | **Mirror** | Flips the video horizontally. |
 | **Night mode** | Dims the video with a translucent overlay. |
 | **Auto-rotate** | Cycles the window between auto, landscape, and portrait. |
+| **Picture-in-picture** | Shrinks the video into a floating window that keeps playing over other apps. |
+| **Equalizer** | Device presets and per-band sliders, bound to the player's audio session. |
 | **Subtitles** | Attach a sidecar subtitle file to the current item; rendered by Media3. |
 
-Not yet built: an audio equalizer, picture-in-picture, playlists, folder browsing, a
-private folder, a subtitle *downloader* (it would need `INTERNET`), and true all-format
-decoding (RMVB/WMV/DivX would need FFmpeg). These are the remaining Arc-Player-parity
-items.
+Built from the Arc-Player-parity list: folder browsing, playlists, picture-in-picture,
+the equalizer, and the private folder. Still open: a subtitle *downloader* (it would need
+`INTERNET`) and true all-format decoding (RMVB/WMV/DivX would need FFmpeg).
 
 ## Install
 
@@ -195,11 +198,14 @@ button to ask again. Nothing is scanned until you grant it.
 | **Detail** | Thumbnail, file metadata, a Play or Resume button, and a favourite toggle | `DetailViewModel` |
 | **Player** | Compose controls overlay over the video surface: gestures, speed, aspect, A–B repeat, sleep timer, and more | `PlayerViewModel` |
 | **Folders** | Browses the on-device tree: a breadcrumb trail, sub-folders with recursive counts, and the files directly inside | `FoldersViewModel` |
+| **Playlists** | Named lists of videos and tracks; opening one plays the list as a queue | `PlaylistsViewModel`, `PlaylistDetailViewModel` |
 | **Favourites** | Everything you have starred, in one grid | `FavouritesViewModel` |
-| **Settings** | Light/dark/system theme, biometric lock, and about | `SettingsViewModel` |
+| **Private folder** | Items hidden behind a biometric check, absent from every other list | `PrivateFolderViewModel` |
+| **Settings** | Light/dark/system theme, biometric lock, a link to the private folder, and about | `SettingsViewModel` |
 
-The bottom bar carries Home, Search, Folders, Favourites, and Settings. Detail and Player
-are full-screen destinations pushed on top, which is why the bar hides for them.
+The bottom bar carries Home, Search, Folders, Playlists, Favourites, and Settings. Detail,
+Player, playlist detail, and the private folder are full-screen destinations pushed on
+top, which is why the bar hides for them.
 
 ## Architecture
 
@@ -448,12 +454,20 @@ APK as artifacts.
 
 `FolderTreeTest` covers the folder tree: path normalisation, storage-root stripping,
 parent and child resolution, recursive counts, and breadcrumbs. `MediaItemFormattingTest`
-covers the small formatting helpers that are easy to get wrong
-and easy to miss: duration text across the hour boundary and unknown durations, and size
-text at each unit boundary. `PlayerSettingsTest` covers the player's pure helpers: speed
-stepping up and down the preset ladder, clock formatting under and over an hour, the
-repeat and resize cycles, and the A–B repeat's active-state rules. All three run on the JVM
-with no device, because the helpers are pure functions with no Android dependencies.
+covers the small formatting helpers that are easy to get wrong and easy to miss: duration
+text across the hour boundary and unknown durations, and size text at each unit boundary.
+`PlayerSettingsTest` covers the player's pure helpers: speed stepping up and down the
+preset ladder, clock formatting under and over an hour, the repeat and resize cycles, and
+the A–B repeat's active-state rules. `PlaylistCodecTest` covers playlist serialisation and
+the duplicate and missing-item rules, and `EqualizerSettingsTest` covers the millibel
+range mapping and preset matching. These run on the JVM with no device, because the
+helpers are pure functions with no Android dependencies.
+
+Two tests go further and drive the real Android code through Robolectric, still with no
+device: `MediaStoreRepositoryTest` runs the repository against a fake MediaStore provider
+on both API 29 and API 28 to check the cursor mapping and the legacy `DATA`-column folder
+fallback, and `PrivateFolderTest` checks that hiding an item removes it from every listing
+while the gated screen still sees it.
 
 ### Signing a release
 

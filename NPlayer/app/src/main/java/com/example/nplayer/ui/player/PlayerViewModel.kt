@@ -6,7 +6,10 @@ import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.session.MediaController
 import com.example.nplayer.data.media.MediaLibrary
+import com.example.nplayer.data.playlists.PlaylistStore
 import com.example.nplayer.playback.AbRepeat
+import com.example.nplayer.playback.EqualizerController
+import com.example.nplayer.playback.EqualizerState
 import com.example.nplayer.playback.PlaybackController
 import com.example.nplayer.playback.RepeatMode
 import com.example.nplayer.playback.ResizeMode
@@ -45,15 +48,22 @@ data class PlayerUiState(
 class PlayerViewModel @Inject constructor(
     private val library: MediaLibrary,
     private val playbackController: PlaybackController,
+    private val playlistStore: PlaylistStore,
+    private val equalizerController: EqualizerController,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(PlayerUiState())
     val state: StateFlow<PlayerUiState> = _state.asStateFlow()
 
+    private val _equalizer = MutableStateFlow(EqualizerState())
+    val equalizer: StateFlow<EqualizerState> = _equalizer.asStateFlow()
+
     private var abLoopJob: Job? = null
     private var sleepJob: Job? = null
+    private var equalizerJob: Job? = null
 
-    fun onEnter(itemKey: String) {
+    /** [queuePlaylistId] plays the whole playlist as a queue instead of one item. */
+    fun onEnter(itemKey: String, queuePlaylistId: String? = null) {
         viewModelScope.launch {
             val controller = playbackController.connect().get()
             _state.update {
@@ -73,7 +83,33 @@ class PlayerViewModel @Inject constructor(
                 return@launch
             }
             _state.update { it.copy(title = item.title) }
-            playbackController.play(item)
+
+            // A playlist resolves to the items that still exist, in playlist order.
+            // Hidden items are left out of the queue, so playing a playlist cannot
+            // surface a private file.
+            val queue = queuePlaylistId
+                ?.let { id -> playlistStore.current().firstOrNull { it.id == id } }
+                ?.itemKeys
+                ?.mapNotNull { library.findVisible(it) }
+                .orEmpty()
+
+            val startIndex = queue.indexOfFirst { it.key == item.key }
+            if (queue.isNotEmpty() && startIndex >= 0) {
+                playbackController.playQueue(queue, startIndex)
+            } else {
+                playbackController.play(item)
+            }
+
+            // The service attaches the equalizer once the audio session exists;
+            // this just mirrors the controller's state into the UI.
+            mirrorEqualizer()
+        }
+    }
+
+    private fun mirrorEqualizer() {
+        equalizerJob?.cancel()
+        equalizerJob = viewModelScope.launch {
+            equalizerController.state.collect { _equalizer.value = it }
         }
     }
 
@@ -81,8 +117,19 @@ class PlayerViewModel @Inject constructor(
         viewModelScope.launch { playbackController.stop(itemKey) }
         abLoopJob?.cancel()
         sleepJob?.cancel()
+        equalizerJob?.cancel()
         playbackController.release()
     }
+
+    // --- Equalizer ---------------------------------------------------------
+
+    fun setEqualizerEnabled(enabled: Boolean) = equalizerController.setEnabled(enabled)
+
+    fun setEqualizerPreset(index: Int) = equalizerController.setPreset(index)
+
+    fun setEqualizerBand(band: Int, levelMb: Int) = equalizerController.setBandLevel(band, levelMb)
+
+    fun equalizerRange(): IntRange = equalizerController.levelRange()
 
     private val player: Player? get() = _state.value.controller
 

@@ -47,7 +47,34 @@ class PlaybackController @Inject constructor(
     suspend fun play(item: MediaFile, subtitleUri: String? = null) {
         val startPosition = positionStore.position(item.key)
 
-        val mediaItem = MediaItem.Builder()
+        val mediaItem = mediaItemFor(item, subtitleUri)
+
+        withContext(Dispatchers.Main) {
+            val c = controller ?: return@withContext
+            c.setMediaItem(mediaItem, startPosition)
+            c.prepare()
+            c.play()
+        }
+        currentKey = item.key
+        startProgressLoop()
+    }
+
+    /** Plays [items] as one queue, starting at [startIndex], like a playlist. */
+    suspend fun playQueue(items: List<MediaFile>, startIndex: Int = 0) {
+        if (items.isEmpty()) return
+        val mediaItems = items.map { mediaItemFor(it, subtitleUri = null) }
+        withContext(Dispatchers.Main) {
+            val c = controller ?: return@withContext
+            c.setMediaItems(mediaItems, startIndex.coerceIn(items.indices), 0L)
+            c.prepare()
+            c.play()
+        }
+        currentKey = items.getOrNull(startIndex)?.key
+        startProgressLoop()
+    }
+
+    private fun mediaItemFor(item: MediaFile, subtitleUri: String?): MediaItem =
+        MediaItem.Builder()
             .setMediaId(item.key)
             .setUri(item.uri)
             .setSubtitleConfigurations(buildList {
@@ -68,16 +95,6 @@ class PlaybackController @Inject constructor(
             )
             .build()
 
-        withContext(Dispatchers.Main) {
-            val c = controller ?: return@withContext
-            c.setMediaItem(mediaItem, startPosition)
-            c.prepare()
-            c.play()
-        }
-        currentKey = item.key
-        startProgressLoop(item.key)
-    }
-
     /** Adds a sidecar subtitle file to the item that is currently playing. */
     fun addSubtitle(uri: String) {
         val c = controller ?: return
@@ -95,11 +112,16 @@ class PlaybackController @Inject constructor(
         c.replaceMediaItem(c.currentMediaItemIndex, updated)
     }
 
-    private fun startProgressLoop(itemKey: String) {
+    private fun startProgressLoop() {
         progressJob?.cancel()
         progressJob = scope.launch {
             while (isActive) {
-                controller?.let { positionStore.save(itemKey, it.currentPosition) }
+                controller?.let { c ->
+                    // In a queue the current item advances, so save against whichever
+                    // item is playing right now rather than the one that started it.
+                    val key = c.currentMediaItem?.mediaId
+                    if (key != null) positionStore.save(key, c.currentPosition)
+                }
                 delay(5_000)
             }
         }

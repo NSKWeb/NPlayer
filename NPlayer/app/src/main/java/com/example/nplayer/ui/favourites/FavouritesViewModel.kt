@@ -33,8 +33,9 @@ class FavouritesViewModel @Inject constructor(
         viewModelScope.launch {
             library.refreshIfEmpty()
             val favourites = settingsStore.current().favourites
-            // Favourites are stored as keys, so drop any whose file has since gone.
-            val items = favourites.mapNotNull { library.find(it) }
+            // Favourites are stored as keys, so drop any whose file has since gone,
+            // and any the user has since moved into the private folder.
+            val items = favourites.mapNotNull { library.findVisible(it) }
             _state.update { FavouritesUiState(items = items, isLoaded = true) }
         }
     }

@@ -1,9 +1,14 @@
 package com.example.nplayer.data.media
 
+import com.example.nplayer.data.prefs.AppSettingsStore
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.withLock
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -15,6 +20,7 @@ import javax.inject.Singleton
 @Singleton
 class MediaLibrary @Inject constructor(
     private val repository: MediaStoreRepository,
+    private val settingsStore: AppSettingsStore,
 ) {
     private val _items = MutableStateFlow<List<MediaItem>>(emptyList())
     val items: StateFlow<List<MediaItem>> = _items.asStateFlow()
@@ -23,6 +29,24 @@ class MediaLibrary @Inject constructor(
     val isScanning: StateFlow<Boolean> = _isScanning.asStateFlow()
 
     private val scanMutex = Mutex()
+
+    /**
+     * Keys in the private folder. Every listing filters these out, so a hidden item
+     * never shows up in Home, Search, Folders or Favourites; only the gated private
+     * screen reads [allItems].
+     */
+    private val hiddenKeys = MutableStateFlow<Set<String>>(emptySet())
+
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+
+    init {
+        scope.launch {
+            settingsStore.settings.collect { hiddenKeys.value = it.privateItems }
+        }
+    }
+
+    /** Every scanned item, including private ones. Only for the private screen. */
+    val allItems: StateFlow<List<MediaItem>> get() = _items.asStateFlow()
 
     /** Re-reads MediaStore. Concurrent calls share one scan. */
     suspend fun refresh() = scanMutex.withLock {
@@ -39,27 +63,39 @@ class MediaLibrary @Inject constructor(
         if (_items.value.isEmpty()) refresh()
     }
 
+    /** Any scanned item, private or not. Use [findVisible] for ordinary screens. */
     fun find(key: String): MediaItem? = _items.value.firstOrNull { it.key == key }
 
-    fun videos(): List<MediaItem> = _items.value.filter { it.kind == MediaKind.VIDEO }
+    /**
+     * Like [find], but returns null for an item in the private folder, so a screen
+     * cannot surface a hidden item through a stale favourite or playlist entry.
+     */
+    fun findVisible(key: String): MediaItem? =
+        find(key)?.takeIf { it.key !in hiddenKeys.value }
 
-    fun audio(): List<MediaItem> = _items.value.filter { it.kind == MediaKind.AUDIO }
+    /** Visible items only; anything in the private folder is withheld. */
+    private fun visible(): List<MediaItem> =
+        _items.value.filterNot { it.key in hiddenKeys.value }
+
+    fun videos(): List<MediaItem> = visible().filter { it.kind == MediaKind.VIDEO }
+
+    fun audio(): List<MediaItem> = visible().filter { it.kind == MediaKind.AUDIO }
 
     /** The immediate child folders of [folder] that contain something, with counts. */
     fun foldersIn(folder: String): List<FolderSummary> =
-        childFolders(folder, _items.value.map { it.folder })
+        childFolders(folder, visible().map { it.folder })
 
     /** Items directly inside [folder], newest first, excluding items in sub-folders. */
     fun itemsIn(folder: String): List<MediaItem> {
         val normalized = normalizeFolder(folder)
-        return _items.value
+        return visible()
             .filter { normalizeFolder(it.folder) == normalized }
             .sortedByDescending { it.dateAddedSeconds }
     }
 
     fun search(query: String): List<MediaItem> {
         if (query.isBlank()) return emptyList()
-        return _items.value.filter { item ->
+        return visible().filter { item ->
             item.title.contains(query, ignoreCase = true) ||
                 item.album?.contains(query, ignoreCase = true) == true ||
                 item.artist?.contains(query, ignoreCase = true) == true

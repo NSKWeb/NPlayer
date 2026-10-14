@@ -11,6 +11,9 @@
     <string name="biometric_title">Biometric lock</string>
     <string name="biometric_subtitle">Require biometric unlock to open the app</string>
 
+    <string name="private_title">Private folder</string>
+    <string name="private_subtitle">Items you have hidden from every other list</string>
+
     <string name="appearance">Appearance</string>
     <string name="theme_title">Theme</string>
     <string name="theme_subtitle">Choose light, dark, or follow the system setting</string>

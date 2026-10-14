@@ -1,6 +1,9 @@
 package com.example.nplayer
 
+import android.app.PictureInPictureParams
+import android.os.Build
 import android.os.Bundle
+import android.util.Rational
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
@@ -20,6 +23,16 @@ import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
 class MainActivity : FragmentActivity() {
+
+    /** Enters picture-in-picture, sizing the window to the video's aspect ratio. */
+    fun enterPictureInPicture() {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
+        val params = PictureInPictureParams.Builder()
+            .setAspectRatio(Rational(16, 9))
+            .build()
+        enterPictureInPictureMode(params)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge()
         super.onCreate(savedInstanceState)

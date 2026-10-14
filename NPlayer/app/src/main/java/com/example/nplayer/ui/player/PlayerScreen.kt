@@ -15,6 +15,7 @@ import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -22,6 +23,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -30,11 +32,13 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Bedtime
 import androidx.compose.material.icons.filled.Brightness6
+import androidx.compose.material.icons.filled.Equalizer
 import androidx.compose.material.icons.filled.Flip
 import androidx.compose.material.icons.filled.Forward10
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.LockOpen
 import androidx.compose.material.icons.filled.Pause
+import androidx.compose.material.icons.filled.PictureInPictureAlt
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Repeat
 import androidx.compose.material.icons.filled.RepeatOne
@@ -51,6 +55,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -74,6 +79,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.ui.PlayerView
+import com.example.nplayer.MainActivity
 import com.example.nplayer.playback.SPEED_PRESETS
 import com.example.nplayer.playback.SLEEP_TIMER_PRESETS
 import com.example.nplayer.playback.formatClock
@@ -86,9 +92,11 @@ import kotlinx.coroutines.delay
 fun PlayerScreen(
     itemKey: String,
     onBack: () -> Unit,
+    queuePlaylistId: String? = null,
     viewModel: PlayerViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val equalizerState by viewModel.equalizer.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val activity = context.findActivity()
 
@@ -99,6 +107,7 @@ fun PlayerScreen(
     var scrubPosition by remember { mutableFloatStateOf(0f) }
     var gestureHint by remember { mutableStateOf<String?>(null) }
     var showSpeedSheet by remember { mutableStateOf(false) }
+    var showEqualizer by remember { mutableStateOf(false) }
     var showSleepSheet by remember { mutableStateOf(false) }
 
     val subtitlePicker = rememberLauncherForActivityResult(
@@ -106,7 +115,7 @@ fun PlayerScreen(
     ) { uri -> uri?.let { viewModel.attachSubtitle(it.toString()) } }
 
     DisposableEffect(Unit) {
-        viewModel.onEnter(itemKey)
+        viewModel.onEnter(itemKey, queuePlaylistId)
         onDispose { viewModel.onLeave(itemKey) }
     }
 
@@ -281,9 +290,23 @@ fun PlayerScreen(
                     onNight = viewModel::toggleNightMode,
                     onLock = { viewModel.toggleLock(); controlsVisible = true },
                     onRotate = { activity?.toggleOrientation() },
+                    onPictureInPicture = { (activity as? MainActivity)?.enterPictureInPicture() },
+                    onEqualizer = { showEqualizer = true },
+                    equalizerEnabled = equalizerState.enabled,
                     onSubtitles = { subtitlePicker.launch(arrayOf("*/*")) },
                 )
             }
+        }
+
+        if (showEqualizer) {
+            EqualizerDialog(
+                state = equalizerState,
+                range = viewModel.equalizerRange(),
+                onToggle = viewModel::setEqualizerEnabled,
+                onPreset = viewModel::setEqualizerPreset,
+                onBand = viewModel::setEqualizerBand,
+                onDismiss = { showEqualizer = false },
+            )
         }
 
         if (showSpeedSheet) {
@@ -337,6 +360,9 @@ private fun ControlsOverlay(
     onLock: () -> Unit,
     onRotate: () -> Unit,
     onSubtitles: () -> Unit,
+    onPictureInPicture: () -> Unit,
+    onEqualizer: () -> Unit,
+    equalizerEnabled: Boolean,
 ) {
     val playing = state.controller?.isPlaying == true
     Column(
@@ -445,9 +471,101 @@ private fun ControlsOverlay(
             OverlayButton(Icons.Filled.Flip, "Mirror", onMirror, active = state.mirrored)
             OverlayButton(Icons.Filled.Brightness6, "Night", onNight, active = state.nightMode)
             OverlayButton(Icons.Filled.ScreenRotation, "Rotate", onRotate)
+            OverlayButton(Icons.Filled.PictureInPictureAlt, "PiP", onPictureInPicture)
+            OverlayButton(Icons.Filled.Equalizer, "Equalizer", onEqualizer, active = equalizerEnabled)
             OverlayButton(Icons.Filled.Subtitles, "Subtitle", onSubtitles)
         }
     }
+}
+
+@Composable
+private fun EqualizerDialog(
+    state: com.example.nplayer.playback.EqualizerState,
+    range: IntRange,
+    onToggle: (Boolean) -> Unit,
+    onPreset: (Int) -> Unit,
+    onBand: (Int, Int) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Equalizer") },
+        text = {
+            if (!state.available) {
+                Text("This device has no equalizer, so it cannot be adjusted.")
+            } else {
+                Column(Modifier.fillMaxHeight(0.75f)) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text("Enabled", modifier = Modifier.weight(1f))
+                        Switch(checked = state.enabled, onCheckedChange = onToggle)
+                    }
+                    Spacer(Modifier.height(8.dp))
+                    Text(
+                        "Presets",
+                        style = MaterialTheme.typography.labelLarge,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Row(
+                        Modifier
+                            .fillMaxWidth()
+                            .horizontalScroll(rememberScrollState()),
+                        horizontalArrangement = Arrangement.spacedBy(4.dp),
+                    ) {
+                        state.presetNames.forEachIndexed { index, name ->
+                            TextButton(onClick = { onPreset(index) }) {
+                                Text(
+                                    name,
+                                    color = if (index == state.presetIndex) {
+                                        MaterialTheme.colorScheme.primary
+                                    } else {
+                                        MaterialTheme.colorScheme.onSurface
+                                    },
+                                )
+                            }
+                        }
+                    }
+                    if (state.isCustom) {
+                        Text(
+                            "Custom",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.primary,
+                        )
+                    }
+                    Spacer(Modifier.height(8.dp))
+                    Column(
+                        Modifier
+                            .weight(1f)
+                            .verticalScroll(rememberScrollState()),
+                    ) {
+                        state.bandLevels.forEachIndexed { band, level ->
+                            Text(
+                                state.bandLabels.getOrNull(band) ?: "Band ${band + 1}",
+                                style = MaterialTheme.typography.labelSmall,
+                            )
+                            Slider(
+                                value = com.example.nplayer.playback.fractionFromLevel(
+                                    level,
+                                    range.first,
+                                    range.last,
+                                ),
+                                onValueChange = { fraction ->
+                                    onBand(
+                                        band,
+                                        com.example.nplayer.playback.levelFromFraction(
+                                            fraction,
+                                            range.first,
+                                            range.last,
+                                        ),
+                                    )
+                                },
+                            )
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = { TextButton(onClick = onDismiss) { Text("Close") } },
+    )
 }
 
 @Composable

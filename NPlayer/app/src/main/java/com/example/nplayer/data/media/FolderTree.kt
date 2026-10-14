@@ -20,13 +20,18 @@ fun normalizeFolder(raw: String?): String =
 /**
  * Strips a storage root from an absolute directory path, as returned by the legacy
  * `DATA` column: `/storage/emulated/0/Movies` and `/storage/1234-5678/Movies` both
- * become `Movies`, so internal and SD-card storage share one tree.
+ * become `Movies`, so internal and SD-card storage share one tree. The root itself
+ * becomes blank rather than a stray volume segment.
  */
 fun stripStorageRoot(path: String): String {
     val trimmed = path.trim().trim('/')
-    for (root in listOf("storage/emulated/0/", "storage/self/primary/", "sdcard/")) {
-        if (trimmed.startsWith(root)) return trimmed.removePrefix(root)
+    val roots = listOf("storage/emulated/0", "storage/self/primary", "sdcard")
+    for (root in roots) {
+        if (trimmed == root) return ""
+        if (trimmed.startsWith("$root/")) return trimmed.removePrefix("$root/")
     }
+    // Any other volume, e.g. a removable card mounted as /storage/1234-5678.
+    if (Regex("^storage/[^/]+$").matches(trimmed)) return ""
     Regex("^storage/[^/]+/").find(trimmed)?.let { return trimmed.removePrefix(it.value) }
     return trimmed
 }
@@ -36,6 +41,17 @@ fun parentFolder(folder: String): String? {
     val normalized = normalizeFolder(folder)
     if (normalized.isEmpty()) return null
     return normalized.substringBeforeLast('/', "")
+}
+
+/**
+ * Derives the containing folder from an absolute file path, as returned by the legacy
+ * `DATA` column on API 26–28 where `RELATIVE_PATH` does not exist:
+ * `/storage/emulated/0/Movies/2024/a.mp4` becomes `Movies/2024`.
+ */
+fun folderFromAbsolutePath(filePath: String?): String {
+    val path = filePath.orEmpty().trim()
+    if (path.isEmpty()) return ""
+    return stripStorageRoot(path.substringBeforeLast('/', ""))
 }
 
 /** The last path segment of [folder], for display. The root has no segment. */
