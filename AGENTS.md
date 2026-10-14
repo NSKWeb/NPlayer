@@ -9,12 +9,17 @@ the `INTERNET` permission.
 - `NPlayer/` — the Gradle project (open this directory, not the repo root).
   - `app/src/main/java/com/example/nplayer/` — Kotlin sources.
     - `data/media/` — `MediaStoreRepository` (scan), `MediaLibrary` (in-memory cache),
-      `MediaItem` (domain model keyed by `content://` URI).
-    - `data/prefs/` — `AppSettingsStore` (theme, biometric lock, favourites),
-      `PlaybackPositionStore` (resume positions), `ThemeMode`.
-    - `playback/` — `PlaybackService` (`MediaSessionService`), `PlaybackController`.
+      `MediaItem` (domain model keyed by `content://` URI), `FolderTree` (pure tree logic).
+    - `data/prefs/` — `AppSettingsStore` (theme, biometric lock, favourites, private
+      folder), `PlaybackPositionStore` (resume positions), `ThemeMode`.
+    - `data/playlists/` — `Playlist` (model), `PlaylistCodec` (pure JSON), `PlaylistStore`.
+    - `playback/` — `PlaybackService` (`MediaSessionService`), `PlaybackController`,
+      `EqualizerController` (platform equalizer bound to the player's audio session).
     - `ui/` — Compose: `theme/`, `navigation/`, `components/`, and one package per screen.
-  - `app/src/test/` — JVM unit tests (no device required).
+      `ui/playlists/` and `ui/privatefolder/` hold their own screen + view model.
+  - `app/src/test/` — JVM unit tests (no device required). Robolectric tests exercise the
+    real repository and library against a fake MediaStore; see `MediaStoreRepositoryTest`
+    and `PrivateFolderTest`.
 - `docs/` — SVG diagrams and screen mockups referenced by `README.md`.
 - `docs/install/index.html` — the GitHub Pages download landing page.
 
@@ -49,18 +54,20 @@ the gesture handlers live in `ui/player/PlayerViewModel.kt`. Pure, unit-tested h
 (enums, speed stepping, clock formatting, A–B model) are in
 `playback/PlayerSettings.kt` — put new pure logic there, not in the composable.
 
-Remaining Arc-Player-parity work, not yet started: equalizer, picture-in-picture,
-playlists, private folder, subtitle downloader (needs `INTERNET`, which the app
-deliberately does not request), and FFmpeg for RMVB/WMV/DivX.
+Built so far from the Arc-Player-parity list: playlists (a playlist plays as one
+Media3 queue), picture-in-picture, the equalizer, and the private folder. Still open:
+the subtitle downloader (needs `INTERNET`, which the app deliberately does not request)
+and FFmpeg for RMVB/WMV/DivX.
 
 ### Folders
 
 `data/media/FolderTree.kt` holds the pure tree logic — path normalisation, storage-root
 stripping, child listing with recursive counts, and breadcrumbs — and is unit-tested in
 `FolderTreeTest`. Keep it free of Android types. `MediaStoreRepository` supplies the
-containing folder from `RELATIVE_PATH`, which exists only from API 29; on older devices
-the folder is empty and everything appears at the root, so the tree stays one level deep
-there rather than throwing on an unknown projection column.
+containing folder from `RELATIVE_PATH` on API 29+, and falls back to the legacy absolute
+`DATA` column before that, so older devices still get a real tree. The projection guards
+on column presence so a device that lacks both columns degrades to the root instead of
+throwing.
 
 ## Conventions
 
@@ -70,5 +77,10 @@ there rather than throwing on an unknown projection column.
   in `data/media/MediaItem.kt` are the model for that.
 - A `content://` URI is the contract between the library, playback, and thumbnails. Do
   not introduce a second identity for an item.
+- The private folder is a visibility filter, not a second store. Keys live in
+  `AppSettingsStore.privateItems`; `MediaLibrary` withholds them from `videos`, `audio`,
+  `itemsIn`, `foldersIn`, `search`, and `findVisible`. Only the gated private screen reads
+  `allItems` or `find`. Any new listing must filter through `visible()` so a hidden item
+  cannot leak back in through a favourite or playlist entry.
 - `README.md` claims must match the code. If you change behaviour (permissions, theme
   options, screens), update the README and the relevant `docs/*.svg` in the same change.

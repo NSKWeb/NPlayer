@@ -49,7 +49,7 @@ fun BiometricGate(
 
     LaunchedEffect(Unit) {
         if (canAuthenticate == BiometricManager.BIOMETRIC_SUCCESS) {
-            prompt(activity) { unlocked = true }
+            promptBiometric(activity) { unlocked = true }
         }
     }
 
@@ -63,12 +63,13 @@ fun BiometricGate(
         ) {
             Text("N Player is locked", style = MaterialTheme.typography.titleLarge)
             Spacer(Modifier.height(16.dp))
-            Button(onClick = { prompt(activity) { unlocked = true } }) { Text("Unlock") }
+            Button(onClick = { promptBiometric(activity) { unlocked = true } }) { Text("Unlock") }
         }
     }
 }
 
-private fun prompt(activity: FragmentActivity, onUnlocked: () -> Unit) {
+/** Prompts for fingerprint/face/device credential; [onUnlocked] runs on success. */
+fun promptBiometric(activity: FragmentActivity, onUnlocked: () -> Unit) {
     val executor = ContextCompat.getMainExecutor(activity)
     val prompt = BiometricPrompt(
         activity,

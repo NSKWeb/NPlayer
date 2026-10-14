@@ -10,6 +10,7 @@ import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.session.MediaSession
 import androidx.media3.session.MediaSessionService
 import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
 
 /**
  * Foreground media service owning the [ExoPlayer] instance and a
@@ -19,6 +20,8 @@ import dagger.hilt.android.AndroidEntryPoint
 @UnstableApi
 @AndroidEntryPoint
 class PlaybackService : MediaSessionService() {
+
+    @Inject lateinit var equalizerController: EqualizerController
 
     private var mediaSession: MediaSession? = null
     private var player: ExoPlayer? = null
@@ -44,6 +47,10 @@ class PlaybackService : MediaSessionService() {
 
         player = exoPlayer
 
+        // The equalizer binds to the player's audio session, which only exists
+        // here, in the service that owns the ExoPlayer instance.
+        exoPlayer.audioSessionId.takeIf { it != 0 }?.let(equalizerController::attach)
+
         mediaSession = MediaSession.Builder(this, exoPlayer).build()
     }
 
@@ -63,6 +70,8 @@ class PlaybackService : MediaSessionService() {
         }
         mediaSession = null
         player = null
+        // The session is gone with the service, so the equalizer must rebind next time.
+        equalizerController.release()
         super.onDestroy()
     }
 }

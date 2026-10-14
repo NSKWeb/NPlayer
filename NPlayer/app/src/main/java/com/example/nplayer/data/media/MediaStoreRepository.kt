@@ -26,17 +26,26 @@ class MediaStoreRepository @Inject constructor(
 
     /**
      * `RELATIVE_PATH` only exists from API 29. Asking for an unknown column throws,
-     * which [runQuery] would swallow into an empty library, so the folder column is
-     * requested only where it exists and older devices get an empty folder.
+     * which [runQuery] would swallow into an empty library, so the column is requested
+     * only where it exists. On API 26–28 the folder is derived from the legacy `DATA`
+     * column instead, so older devices still get a real tree.
      */
     private val hasRelativePath: Boolean
         get() = Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q
 
     private val folderColumns: Array<String>
-        get() = if (hasRelativePath) arrayOf(MediaStore.MediaColumns.RELATIVE_PATH) else emptyArray()
+        get() = if (hasRelativePath) {
+            arrayOf(MediaStore.MediaColumns.RELATIVE_PATH)
+        } else {
+            arrayOf(MediaStore.MediaColumns.DATA)
+        }
 
     private fun android.database.Cursor.folderOrRoot(index: Int): String =
-        if (hasRelativePath) normalizeFolder(getStringOrNull(index)) else ""
+        if (hasRelativePath) {
+            normalizeFolder(getStringOrNull(index))
+        } else {
+            folderFromAbsolutePath(getStringOrNull(index))
+        }
 
     private fun queryVideos(): List<MediaItem> {
         val collection = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {

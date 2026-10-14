@@ -20,13 +20,23 @@ import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.PlaylistAdd
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -36,6 +46,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import com.example.nplayer.data.media.MediaKind
+import com.example.nplayer.data.playlists.Playlist
 import com.example.nplayer.ui.components.MessageState
 
 @Composable
@@ -47,6 +58,7 @@ fun DetailScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val item = state.item
+    var showPlaylistPicker by remember { mutableStateOf(false) }
 
     if (item == null) {
         MessageState(
@@ -126,7 +138,10 @@ fun DetailScreen(
             }
 
             Spacer(Modifier.height(16.dp))
-            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
                 Button(onClick = { onPlay(item.key) }) {
                     Icon(Icons.Filled.PlayArrow, contentDescription = null)
                     Text(if (state.resumePositionMillis > 0) "  Resume" else "  Play")
@@ -138,9 +153,104 @@ fun DetailScreen(
                         tint = MaterialTheme.colorScheme.primary,
                     )
                 }
+                IconButton(onClick = { showPlaylistPicker = true }) {
+                    Icon(
+                        imageVector = Icons.Filled.PlaylistAdd,
+                        contentDescription = "Add to playlist",
+                        tint = MaterialTheme.colorScheme.primary,
+                    )
+                }
+                IconButton(onClick = viewModel::togglePrivate) {
+                    Icon(
+                        imageVector = if (state.isPrivate) Icons.Filled.Visibility else Icons.Filled.VisibilityOff,
+                        contentDescription = if (state.isPrivate) "Unhide" else "Hide",
+                        tint = MaterialTheme.colorScheme.primary,
+                    )
+                }
+            }
+
+            if (state.isPrivate) {
+                Spacer(Modifier.height(8.dp))
+                Text(
+                    "Hidden in the private folder",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.primary,
+                )
             }
         }
     }
+
+    if (showPlaylistPicker) {
+        AddToPlaylistDialog(
+            playlists = state.playlists,
+            onPick = { viewModel.addToPlaylist(it); showPlaylistPicker = false },
+            onCreate = { viewModel.createPlaylistWithItem(it); showPlaylistPicker = false },
+            onDismiss = { showPlaylistPicker = false },
+        )
+    }
+
+    state.addedToPlaylist?.let { name ->
+        AlertDialog(
+            onDismissRequest = viewModel::clearAddedMessage,
+            title = { Text("Added to playlist") },
+            text = { Text("\"${item.title}\" was added to $name.") },
+            confirmButton = {
+                TextButton(onClick = viewModel::clearAddedMessage) { Text("OK") }
+            },
+        )
+    }
+}
+
+@Composable
+private fun AddToPlaylistDialog(
+    playlists: List<Playlist>,
+    onPick: (String) -> Unit,
+    onCreate: (String) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    var newName by remember { mutableStateOf("") }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Add to playlist") },
+        text = {
+            Column {
+                if (playlists.isEmpty()) {
+                    Text(
+                        "No playlists yet. Type a name to make one.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                    Spacer(Modifier.height(12.dp))
+                } else {
+                    playlists.forEach { playlist ->
+                        TextButton(
+                            onClick = { onPick(playlist.id) },
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
+                            Text(playlist.name, modifier = Modifier.weight(1f))
+                            Text("${playlist.size}", style = MaterialTheme.typography.labelSmall)
+                        }
+                    }
+                    Spacer(Modifier.height(12.dp))
+                    HorizontalDivider()
+                    Spacer(Modifier.height(12.dp))
+                }
+                OutlinedTextField(
+                    value = newName,
+                    onValueChange = { newName = it },
+                    singleLine = true,
+                    label = { Text("New playlist") },
+                    modifier = Modifier.fillMaxWidth(),
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = { onCreate(newName) }, enabled = newName.isNotBlank()) {
+                Text("Create and add")
+            }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text("Cancel") } },
+    )
 }
 
 private fun formatTimestamp(millis: Long): String {

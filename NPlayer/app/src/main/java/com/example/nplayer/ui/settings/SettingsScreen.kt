@@ -1,5 +1,6 @@
 package com.example.nplayer.ui.settings
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -11,6 +12,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BrightnessAuto
+import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material3.HorizontalDivider
@@ -34,7 +36,10 @@ import com.example.nplayer.R
 import com.example.nplayer.data.prefs.ThemeMode
 
 @Composable
-fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {
+fun SettingsScreen(
+    onOpenPrivateFolder: () -> Unit = {},
+    viewModel: SettingsViewModel = hiltViewModel(),
+) {
     val state by viewModel.state.collectAsStateWithLifecycle()
 
     Column(
@@ -76,6 +81,33 @@ fun SettingsScreen(viewModel: SettingsViewModel = hiltViewModel()) {
             Switch(
                 checked = state.biometricLock,
                 onCheckedChange = viewModel::setBiometricLock,
+            )
+        }
+
+        Spacer(Modifier.height(16.dp))
+        HorizontalDivider()
+
+        Spacer(Modifier.height(16.dp))
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable(onClick = onOpenPrivateFolder)
+                .padding(vertical = 4.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
+        ) {
+            Column(Modifier.weight(1f)) {
+                Text(stringResource(R.string.private_title), style = MaterialTheme.typography.bodyLarge)
+                Text(
+                    stringResource(R.string.private_subtitle),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            Icon(
+                imageVector = Icons.Filled.ChevronRight,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
 

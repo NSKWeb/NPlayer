@@ -34,6 +34,16 @@ class FolderTreeTest {
     }
 
     @Test
+    fun `legacy absolute paths yield a relative folder`() {
+        assertEquals("Movies/2024", folderFromAbsolutePath("/storage/emulated/0/Movies/2024/a.mp4"))
+        assertEquals("DCIM/Camera", folderFromAbsolutePath("/storage/1234-5678/DCIM/Camera/IMG.jpg"))
+        assertEquals("Music", folderFromAbsolutePath("/sdcard/Music/song.mp3"))
+        assertEquals("", folderFromAbsolutePath("/storage/emulated/0/atroot.mp4"))
+        assertEquals("", folderFromAbsolutePath(null))
+        assertEquals("", folderFromAbsolutePath(""))
+    }
+
+    @Test
     fun `name is the last segment, or the root label`() {
         assertEquals("2024", folderName("Movies/2024"))
         assertEquals("Movies", folderName("Movies"))
