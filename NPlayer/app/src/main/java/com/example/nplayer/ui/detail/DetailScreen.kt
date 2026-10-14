@@ -47,6 +47,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -55,6 +56,7 @@ import coil.compose.AsyncImage
 import com.example.nplayer.data.media.MediaKind
 import com.example.nplayer.data.playlists.Playlist
 import com.example.nplayer.ui.components.MessageState
+import com.example.nplayer.ui.components.thumbnailRequest
 
 @Composable
 fun DetailScreen(
@@ -65,6 +67,7 @@ fun DetailScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val item = state.item
+    val context = LocalContext.current
     var showPlaylistPicker by remember { mutableStateOf(false) }
 
     if (item == null) {
@@ -93,7 +96,7 @@ fun DetailScreen(
         ) {
             if (isVideo) {
                 AsyncImage(
-                    model = item.uri,
+                    model = thumbnailRequest(context, item.uri),
                     contentDescription = item.title,
                     contentScale = ContentScale.Crop,
                     modifier = Modifier.fillMaxSize(),

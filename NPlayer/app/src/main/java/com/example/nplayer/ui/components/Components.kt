@@ -1,5 +1,7 @@
 package com.example.nplayer.ui.components
 
+import android.content.Context
+import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -27,6 +29,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -34,17 +40,46 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
+import coil.request.ImageRequest
+import coil.request.videoFramePercent
 
 /** The single grid specification shared by Home, Search, Folders and Favourites. */
 val MediaGridCells = GridCells.Adaptive(minSize = 116.dp)
 val MediaGridPadding = PaddingValues(start = 14.dp, end = 14.dp, top = 8.dp, bottom = 24.dp)
 val MediaGridHorizontalSpacing = 12.dp
 val MediaGridVerticalSpacing = 16.dp
+
+/**
+ * How far into a video the grid thumbnail is taken, as a fraction of its length.
+ * Frame 0 is black in a lot of encodes (fade-in, slate, encoder leader), which reads
+ * as "no thumbnail" against a dark card. A proportion rather than a fixed offset is
+ * used so a clip shorter than the offset still resolves to a real frame.
+ */
+private const val THUMBNAIL_FRAME_FRACTION = 0.1
+
+/**
+ * Builds the Coil request for a card's artwork. A `content://` video is asked for a
+ * frame past the opening, so a black first frame does not look like a missing image;
+ * anything else (an album cover, a plain image URI) is loaded unchanged.
+ */
+@Composable
+fun thumbnailRequest(context: Context, model: Any): Any =
+    if (model is Uri && context.contentResolver.getType(model)?.startsWith("video/") == true) {
+        remember(model) {
+            ImageRequest.Builder(context)
+                .data(model)
+                .videoFramePercent(THUMBNAIL_FRAME_FRACTION)
+                .build()
+        }
+    } else {
+        model
+    }
 
 /**
  * Grid card for a device file. [imageModel] accepts a `content://` [android.net.Uri]
@@ -70,6 +105,11 @@ fun PosterCard(
             .clickable(onClick = onClick)
             .padding(bottom = 2.dp),
     ) {
+        val context = LocalContext.current
+        // A failure falls back to the placeholder glyph rather than an empty box, so a
+        // file MediaMetadataRetriever cannot decode still reads as a card.
+        var failed by remember(imageModel) { mutableStateOf(false) }
+
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -78,11 +118,12 @@ fun PosterCard(
                 .background(MaterialTheme.colorScheme.surfaceVariant),
             contentAlignment = Alignment.Center,
         ) {
-            if (imageModel != null) {
+            if (imageModel != null && !failed) {
                 AsyncImage(
-                    model = imageModel,
+                    model = thumbnailRequest(context, imageModel),
                     contentDescription = title,
                     contentScale = ContentScale.Crop,
+                    onError = { failed = true },
                     modifier = Modifier.fillMaxSize(),
                 )
             } else {
