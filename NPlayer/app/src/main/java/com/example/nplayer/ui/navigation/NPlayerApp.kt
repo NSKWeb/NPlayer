@@ -6,12 +6,20 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Folder
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.QueueMusic
+import androidx.compose.material.icons.automirrored.filled.QueueMusic
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material.icons.outlined.FavoriteBorder
+import androidx.compose.material.icons.outlined.FolderOpen
+import androidx.compose.material.icons.outlined.Home
+import androidx.compose.material.icons.automirrored.outlined.QueueMusic
+import androidx.compose.material.icons.outlined.Search
+import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -20,8 +28,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.unit.dp
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.NavGraph.Companion.findStartDestination
 import androidx.navigation.compose.NavHost
@@ -69,15 +78,21 @@ object Routes {
     fun decodeItemKey(raw: String?): String = Uri.decode(raw.orEmpty())
 }
 
-private data class Tab(val route: String, val label: String, val icon: ImageVector)
+/** A destination in the bottom bar, with a filled icon when selected. */
+private data class Tab(
+    val route: String,
+    val label: String,
+    val selectedIcon: ImageVector,
+    val icon: ImageVector,
+)
 
 private val tabs = listOf(
-    Tab(Routes.HOME, "Home", Icons.Filled.Home),
-    Tab(Routes.SEARCH, "Search", Icons.Filled.Search),
-    Tab(Routes.FOLDERS, "Folders", Icons.Filled.Folder),
-    Tab(Routes.FAVOURITES, "Favourites", Icons.Filled.Favorite),
-    Tab(Routes.PLAYLISTS, "Playlists", Icons.Filled.QueueMusic),
-    Tab(Routes.SETTINGS, "Settings", Icons.Filled.Settings),
+    Tab(Routes.HOME, "Home", Icons.Filled.Home, Icons.Outlined.Home),
+    Tab(Routes.SEARCH, "Search", Icons.Filled.Search, Icons.Outlined.Search),
+    Tab(Routes.FOLDERS, "Folders", Icons.Filled.Folder, Icons.Outlined.FolderOpen),
+    Tab(Routes.FAVOURITES, "Favourites", Icons.Filled.Favorite, Icons.Outlined.FavoriteBorder),
+    Tab(Routes.PLAYLISTS, "Playlists", Icons.AutoMirrored.Filled.QueueMusic, Icons.AutoMirrored.Outlined.QueueMusic),
+    Tab(Routes.SETTINGS, "Settings", Icons.Filled.Settings, Icons.Outlined.Settings),
 )
 
 @Composable
@@ -90,9 +105,13 @@ fun NPlayerApp() {
     Scaffold(
         bottomBar = {
             if (showTabs) {
-                NavigationBar {
+                NavigationBar(
+                    containerColor = MaterialTheme.colorScheme.surface,
+                    tonalElevation = 0.dp,
+                ) {
                     tabs.forEach { tab ->
-                        val selected = backStackEntry?.destination?.hierarchy?.any { it.route == tab.route } == true
+                        val selected = backStackEntry?.destination?.hierarchy
+                            ?.any { it.route == tab.route } == true
                         NavigationBarItem(
                             selected = selected,
                             onClick = {
@@ -102,8 +121,18 @@ fun NPlayerApp() {
                                     restoreState = true
                                 }
                             },
-                            icon = { Icon(tab.icon, contentDescription = tab.label) },
+                            icon = {
+                                Icon(
+                                    if (selected) tab.selectedIcon else tab.icon,
+                                    contentDescription = tab.label,
+                                )
+                            },
                             label = { Text(tab.label) },
+                            colors = NavigationBarItemDefaults.colors(
+                                selectedIconColor = MaterialTheme.colorScheme.primary,
+                                selectedTextColor = MaterialTheme.colorScheme.primary,
+                                indicatorColor = MaterialTheme.colorScheme.primaryContainer,
+                            ),
                         )
                     }
                 }

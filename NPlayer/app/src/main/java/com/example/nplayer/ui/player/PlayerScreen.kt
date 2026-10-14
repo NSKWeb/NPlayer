@@ -14,8 +14,6 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.horizontalScroll
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -23,13 +21,17 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.AspectRatio
 import androidx.compose.material.icons.filled.Bedtime
 import androidx.compose.material.icons.filled.Brightness6
 import androidx.compose.material.icons.filled.Equalizer
@@ -48,8 +50,8 @@ import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material.icons.filled.Speed
 import androidx.compose.material.icons.filled.Subtitles
 import androidx.compose.material.icons.filled.Timer
-import androidx.compose.material.icons.filled.AspectRatio
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -72,6 +74,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -80,8 +83,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.ui.PlayerView
 import com.example.nplayer.MainActivity
-import com.example.nplayer.playback.SPEED_PRESETS
+import com.example.nplayer.playback.QUICK_SEEK_STEPS
 import com.example.nplayer.playback.SLEEP_TIMER_PRESETS
+import com.example.nplayer.playback.SPEED_PRESETS
 import com.example.nplayer.playback.formatClock
 import com.example.nplayer.playback.formatSleepRemaining
 import com.example.nplayer.playback.formatSpeed
@@ -241,11 +245,16 @@ fun PlayerScreen(
 
         gestureHint?.let {
             Surface(
-                color = Color.Black.copy(alpha = 0.6f),
-                shape = MaterialTheme.shapes.medium,
+                color = Color.Black.copy(alpha = 0.7f),
+                shape = RoundedCornerShape(14.dp),
                 modifier = Modifier.align(Alignment.Center),
             ) {
-                Text(it, color = Color.White, modifier = Modifier.padding(16.dp))
+                Text(
+                    it,
+                    color = Color.White,
+                    style = MaterialTheme.typography.titleMedium,
+                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 14.dp),
+                )
             }
         }
 
@@ -365,10 +374,13 @@ private fun ControlsOverlay(
     equalizerEnabled: Boolean,
 ) {
     val playing = state.controller?.isPlaying == true
+    val shown = if (scrubbing) scrubPosition.toLong() else position
+    val remaining = (duration - shown).coerceAtLeast(0L)
+
     Column(
         Modifier
             .fillMaxSize()
-            .background(Color.Black.copy(alpha = 0.35f)),
+            .background(Color.Black.copy(alpha = 0.38f)),
     ) {
         Row(
             Modifier
@@ -384,6 +396,7 @@ private fun ControlsOverlay(
                 color = Color.White,
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
+                style = MaterialTheme.typography.titleSmall,
                 modifier = Modifier.weight(1f),
             )
             state.sleepRemainingMillis?.let {
@@ -404,20 +417,44 @@ private fun ControlsOverlay(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             IconButton(onClick = { onSeekBy(-10_000) }) {
-                Icon(Icons.Filled.Replay10, contentDescription = "Back 10 seconds", tint = Color.White, modifier = Modifier.size(36.dp))
+                Icon(Icons.Filled.Replay10, contentDescription = "Back 10 seconds", tint = Color.White, modifier = Modifier.size(38.dp))
             }
-            Spacer(Modifier.width(24.dp))
-            IconButton(onClick = onTogglePlay) {
+            Spacer(Modifier.width(20.dp))
+            FilledTonalIconButton(
+                onClick = onTogglePlay,
+                modifier = Modifier.size(68.dp),
+                shape = RoundedCornerShape(50),
+            ) {
                 Icon(
                     if (playing) Icons.Filled.Pause else Icons.Filled.PlayArrow,
                     contentDescription = if (playing) "Pause" else "Play",
                     tint = Color.White,
-                    modifier = Modifier.size(56.dp),
+                    modifier = Modifier.size(34.dp),
                 )
             }
-            Spacer(Modifier.width(24.dp))
+            Spacer(Modifier.width(20.dp))
             IconButton(onClick = { onSeekBy(10_000) }) {
-                Icon(Icons.Filled.Forward10, contentDescription = "Forward 10 seconds", tint = Color.White, modifier = Modifier.size(36.dp))
+                Icon(Icons.Filled.Forward10, contentDescription = "Forward 10 seconds", tint = Color.White, modifier = Modifier.size(38.dp))
+            }
+        }
+
+        Spacer(Modifier.height(10.dp))
+
+        // Long jumps for films: +20/+40 min forward and back, without dragging.
+        Row(
+            Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.Center,
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            QUICK_SEEK_STEPS.forEach { step ->
+                TextButton(onClick = { onSeekBy(step.deltaMillis) }) {
+                    Text(
+                        step.label,
+                        color = Color.White,
+                        style = MaterialTheme.typography.labelLarge,
+                        fontWeight = FontWeight.Medium,
+                    )
+                }
             }
         }
 
@@ -430,7 +467,7 @@ private fun ControlsOverlay(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                formatClock(if (scrubbing) scrubPosition.toLong() else position),
+                formatClock(shown),
                 color = Color.White,
                 style = MaterialTheme.typography.labelMedium,
             )
@@ -443,7 +480,12 @@ private fun ControlsOverlay(
                     .weight(1f)
                     .padding(horizontal = 8.dp),
             )
-            Text(formatClock(duration), color = Color.White, style = MaterialTheme.typography.labelMedium)
+            // Time left in the file, so the length is readable at a glance.
+            Text(
+                if (duration > 0) "−${formatClock(remaining)}" else formatClock(duration),
+                color = Color.White,
+                style = MaterialTheme.typography.labelMedium,
+            )
         }
 
         Row(
@@ -454,11 +496,7 @@ private fun ControlsOverlay(
             horizontalArrangement = Arrangement.spacedBy(4.dp),
         ) {
             OverlayButton(Icons.Filled.Speed, formatSpeed(state.speed), onSpeed)
-            OverlayButton(
-                Icons.Filled.AspectRatio,
-                state.resizeMode.label,
-                onResize,
-            )
+            OverlayButton(Icons.Filled.AspectRatio, state.resizeMode.label, onResize)
             OverlayButton(
                 if (state.repeatMode.media3Mode == 1) Icons.Filled.RepeatOne else Icons.Filled.Repeat,
                 state.repeatMode.label.removePrefix("Repeat ").replaceFirstChar { it.uppercase() },

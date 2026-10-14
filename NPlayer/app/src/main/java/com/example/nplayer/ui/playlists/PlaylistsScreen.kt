@@ -20,7 +20,7 @@ import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.QueueMusic
+import androidx.compose.material.icons.automirrored.filled.QueueMusic
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -111,7 +111,7 @@ private fun PlaylistRow(playlist: Playlist, onClick: () -> Unit, onDelete: () ->
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Icon(
-            imageVector = Icons.Filled.QueueMusic,
+            imageVector = Icons.AutoMirrored.Filled.QueueMusic,
             contentDescription = null,
             tint = MaterialTheme.colorScheme.primary,
         )

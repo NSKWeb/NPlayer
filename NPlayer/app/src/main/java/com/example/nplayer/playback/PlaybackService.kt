@@ -3,6 +3,7 @@ package com.example.nplayer.playback
 import android.content.Intent
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
+import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.DefaultDataSource
 import androidx.media3.exoplayer.ExoPlayer
@@ -26,6 +27,23 @@ class PlaybackService : MediaSessionService() {
     private var mediaSession: MediaSession? = null
     private var player: ExoPlayer? = null
 
+    /**
+     * Ends the service once there is nothing left to play, so a finished or idle
+     * player does not keep the process and its notification alive in the background.
+     * Playback that is still running is deliberately left alone: background audio is
+     * the point of the service.
+     */
+    private val idleStopListener = object : Player.Listener {
+        override fun onPlaybackStateChanged(playbackState: Int) {
+            if (playbackState == Player.STATE_ENDED) {
+                val p = player ?: return
+                if (!p.hasNextMediaItem() && p.repeatMode == Player.REPEAT_MODE_OFF) {
+                    stopSelf()
+                }
+            }
+        }
+    }
+
     override fun onCreate() {
         super.onCreate()
 
@@ -45,6 +63,7 @@ class PlaybackService : MediaSessionService() {
             .setWakeMode(C.WAKE_MODE_NETWORK)
             .build()
 
+        exoPlayer.addListener(idleStopListener)
         player = exoPlayer
 
         // The equalizer binds to the player's audio session, which only exists
@@ -56,6 +75,11 @@ class PlaybackService : MediaSessionService() {
 
     override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaSession? = mediaSession
 
+    /**
+     * Called when the user swipes the app out of recents. If nothing is playing the
+     * service stops here; an actively playing item is left running so audio continues
+     * and can be resumed from the notification.
+     */
     override fun onTaskRemoved(rootIntent: Intent?) {
         val p = mediaSession?.player
         if (p == null || !p.playWhenReady || p.mediaItemCount == 0) {
@@ -65,6 +89,7 @@ class PlaybackService : MediaSessionService() {
 
     override fun onDestroy() {
         mediaSession?.run {
+            player.removeListener(idleStopListener)
             player.release()
             release()
         }

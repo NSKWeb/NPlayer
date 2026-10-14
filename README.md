@@ -34,6 +34,20 @@ files are there.
 
 </div>
 
+## What's new in 1.1.0
+
+1.1.0 is a design and smoothness pass, plus the long-jump controls that were missing
+from the player.
+
+| Change | What it means |
+|---|---|
+| **Jump 20 / 40 minutes** | The player now has a quick-jump row next to the ±10 s buttons: **+20m, +40m, −20m, −40m**, for skipping through a long film without dragging the scrubber. |
+| **Time remaining** | The seek bar shows the time left (`−1:23:45`) as well as the position, so the length of a file is readable at a glance. |
+| **The app's own look** | A deep near-black palette with a cool blue accent and heavier headings, so your thumbnails are the brightest thing on screen. |
+| **Match my wallpaper** | Dynamic colour (Material You) is now a **setting**, off by default, so the app keeps its own identity unless you ask for the wallpaper palette. |
+| **Better cards** | Rounded poster cards with a duration pill and a soft scrim, section headings with counts, and a filled/outlined bottom bar. |
+| **Stops when it is done** | The player service now ends itself when a file finishes with nothing queued, so the app does not linger in the background after you close it. |
+
 ## What's new in 1.0.2
 
 1.0.2 fixes playback, which did not start at all in 1.0.0 and 1.0.1, and makes the
@@ -460,8 +474,138 @@ Because releases are versioned, users can also browse older builds under
 | **F-Droid** | Open-source Android catalogue | Requires fully reproducible builds and a public signing setup |
 | **Self-hosted / S3 / Cloudflare R2** | Private or internal distribution | You own the bandwidth, TLS, and uptime |
 
-For Play, you would sign with a real keystore and switch to `bundleRelease` — see
-[Signing a release](#signing-a-release). Everything else above works unchanged.
+## Publishing to the Play Store
+
+This is the full path from this repo to a live listing. It is deliberately step by step:
+each step produces something you can check before moving on.
+
+### 1. Create a release keystore
+
+Play will not accept a debug-signed build, and you must keep this key for the life of
+the app — every future update has to be signed with the same one.
+
+```bash
+keytool -genkeypair -v \
+  -keystore nplayer-release.jks \
+  -alias nplayer \
+  -keyalg RSA -keysize 4096 -validity 10000
+```
+
+Answer the prompts, then keep `nplayer-release.jks` and its passwords somewhere safe
+(a password manager plus an offline backup). If you lose it you cannot update the app.
+
+### 2. Point the build at the keystore
+
+Create `NPlayer/keystore.properties` — it is git-ignored, so the secrets stay local:
+
+```properties
+storeFile=/absolute/path/to/nplayer-release.jks
+storePassword=…
+keyAlias=nplayer
+keyPassword=…
+```
+
+`app/build.gradle.kts` already reads this file and switches the release build to a real
+signature when it is present; with no file it falls back to the debug key, which is what
+makes the GitHub release installable.
+
+### 3. Build an Android App Bundle
+
+Play distributes `.aab`, not `.apk`:
+
+```bash
+cd NPlayer
+./gradlew :app:bundleRelease
+```
+
+The bundle lands at `app/build/outputs/bundle/release/app-release.aab`. Play then
+generates per-device APKs from it, which is smaller for users than one universal APK.
+
+### 4. Set an application id you own
+
+The id is permanent once published. `com.example.nplayer` is fine for sideloading but
+looks unfinished on a store — change `applicationId` in `app/build.gradle.kts` (and the
+`namespace`) to something you control, e.g. `dev.nskweb.nplayer`, **before** the first
+upload. Afterwards you cannot change it.
+
+### 5. Write the store listing assets
+
+You need, ready to upload:
+
+| Asset | Requirement |
+|---|---|
+| App name | 30 characters max |
+| Short description | 80 characters max |
+| Full description | 4000 characters max |
+| App icon | 512×512 PNG, 32-bit |
+| Feature graphic | 1024×500 PNG |
+| Phone screenshots | 2–8 images, 16:9 or 9:16, min 320 px on the short side |
+
+The `docs/*.svg` mockups in this repo are a good source for the screenshots — export
+them to PNG at the required sizes.
+
+### 6. Write a privacy policy
+
+Play requires a reachable privacy-policy URL. N Player is easy to describe honestly:
+it reads your media through Android's MediaStore, requests **no** `INTERNET`
+permission, and sends nothing off the device. A single static page stating that is
+enough — GitHub Pages is a fine host.
+
+### 7. Create the app in Play Console
+
+1. Go to [play.google.com/console](https://play.google.com/console) and create a
+   developer account (one-time fee).
+2. **Create app**, set the default language, app name, and choose *App* (not game).
+3. Fill in **App content**: privacy policy URL, ads (none), data safety (no data
+   collected or shared), target audience, and content rating questionnaire.
+4. Complete the **Data safety** form carefully — because there is no network access,
+   you can declare that no data is collected, which is a genuine selling point.
+
+### 8. Upload and roll out
+
+1. **Testing → Internal testing → Create new release**, upload `app-release.aab`.
+2. Add yourself as a tester, install from the opt-in link, and confirm playback,
+   permissions, and the background behaviour on a real device.
+3. Promote to **Closed**, then **Open** testing if you want a wider check.
+4. **Production → Create new release**, upload the same bundle, write release notes,
+   and roll out. First review usually takes a few days.
+
+### 9. Ship updates
+
+Bump `versionCode` (must increase every upload) and `versionName` in
+`app/build.gradle.kts`, then repeat step 8. Play handles delivery and auto-updates from
+then on.
+
+> [!NOTE]
+> **Play App Signing.** Google re-signs your bundle with its own key by default and
+> holds the app-signing key for you. Your `nplayer-release.jks` then acts as the
+> *upload* key. This is the recommended setting — losing an upload key can be
+> recovered, losing an app-signing key cannot.
+
+## Publishing to F-Droid
+
+F-Droid builds from source and publishes its own signature, so there is nothing to
+upload by hand. To be listed you need a public source repo, a permissive licence (this
+project is MIT), and no proprietary dependencies or tracking. Add an
+[`fdroiddata`](https://gitlab.com/fdroid/fdroiddata) metadata file
+(`metadata/dev.nskweb.nplayer.yml`) with the repo URL, build recipe
+(`./gradlew :app:assembleRelease`), and version tags, then open a merge request. F-Droid
+must be able to reproduce the build, so avoid anything that pulls a binary at build time.
+
+## Signing a release
+
+Release signing is driven by `keystore.properties` at `NPlayer/keystore.properties`:
+
+```properties
+storeFile=/absolute/path/to/keystore.jks
+storePassword=…
+keyAlias=…
+keyPassword=…
+```
+
+When the file is absent the release build is signed with the debug key — that is what
+keeps the GitHub release installable with no setup. Add the file (and never commit it)
+when you want a real signature, for Play or for a signed direct download.
 
 ### Keep the APK out of git
 

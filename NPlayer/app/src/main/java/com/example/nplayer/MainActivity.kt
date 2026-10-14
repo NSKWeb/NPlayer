@@ -40,7 +40,10 @@ class MainActivity : FragmentActivity() {
             val settingsViewModel: SettingsViewModel = hiltViewModel()
             val settings by settingsViewModel.state.collectAsStateWithLifecycle()
 
-            NPlayerTheme(darkTheme = settings.themeMode.resolveDark()) {
+            NPlayerTheme(
+                darkTheme = settings.themeMode.resolveDark(),
+                dynamicColor = settings.dynamicColor,
+            ) {
                 Surface(
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background,

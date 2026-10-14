@@ -55,7 +55,24 @@ is installable without a keystore.
 `useController = false`; the stock Media3 controller is not used. All player state and
 the gesture handlers live in `ui/player/PlayerViewModel.kt`. Pure, unit-tested helpers
 (enums, speed stepping, clock formatting, A–B model) are in
-`playback/PlayerSettings.kt` — put new pure logic there, not in the composable.
+`playback/PlayerSettings.kt` — put new pure logic there, not in the composable. The
+quick-jump steps and their clamping live in `playback/SeekSteps.kt` (`SeekStepsTest`):
+the overlay's row of +20m/+40m/−20m/−40m buttons and the ±10 s buttons all route
+through `PlayerViewModel.seekBy`, which clamps to the media bounds.
+
+### Theme
+
+`ui/theme/Theme.kt` owns the palette and typography. Dynamic colour is **off** by
+default: the app keeps its own near-black/blue identity unless the user turns on
+"Match my wallpaper" in Settings. `AppSettings.dynamicColor` is read in `MainActivity`
+and passed to `NPlayerTheme`; the toggle only shows on API 31+.
+
+### Background behaviour
+
+`PlaybackService` is a foreground service, so it keeps running while audio plays — that
+is intended. It stops itself when playback ends with no next item and repeat off
+(`idleStopListener`), and on task removal when nothing is playing. Do not make it stop
+on every task removal: that would kill background audio, which is the service's purpose.
 
 Built so far from the Arc-Player-parity list: playlists (a playlist plays as one
 Media3 queue), picture-in-picture, the equalizer, and the private folder. Still open:
