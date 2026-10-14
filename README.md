@@ -34,6 +34,16 @@ files are there.
 
 </div>
 
+## What's new in 1.1.4
+
+1.1.4 fixes three smaller player issues.
+
+| Change | What it means |
+| --- | --- |
+| **The gesture hint clears itself** | The brightness, volume and seek hint that appears while you drag now fades out shortly after the gesture ends, instead of staying on the video until you tap it away. |
+| **Picture-in-picture keeps the video's shape** | The small window now matches the aspect ratio of the video playing, instead of always being a 16:9 box. |
+| **The equalizer binds when audio starts** | The equalizer previously attached at service start, before the player had an audio session, so it could stay unbound and appear to do nothing. It now attaches as soon as the audio session exists. |
+
 ## What's new in 1.1.3
 
 1.1.3 fixes fullscreen playback and background playback.

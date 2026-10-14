@@ -153,6 +153,28 @@ fun PlayerScreen(
         }
     }
 
+    // A gesture hint describes the gesture that is happening, so it clears itself
+    // shortly after the last update instead of staying on screen for good.
+    LaunchedEffect(gestureHint) {
+        if (gestureHint != null) {
+            delay(900)
+            gestureHint = null
+        }
+    }
+
+    // Keep the PiP window the same shape as the video that is playing, rather than a
+    // fixed 16:9 box.
+    LaunchedEffect(state.player) {
+        val p = state.player ?: return@LaunchedEffect
+        while (true) {
+            val size = p.videoSize
+            if (size.width > 0 && size.height > 0) {
+                (activity as? MainActivity)?.updatePictureInPictureAspectRatio(size.width, size.height)
+            }
+            delay(1_000)
+        }
+    }
+
     // Hide the status and navigation bars for the whole time the player is on screen,
     // and put them back on the way out. Swiping still reveals them briefly, which is
     // the standard immersive behaviour.

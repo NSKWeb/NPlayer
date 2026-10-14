@@ -24,13 +24,35 @@ import dagger.hilt.android.AndroidEntryPoint
 @AndroidEntryPoint
 class MainActivity : FragmentActivity() {
 
+    /** The shape of the PiP window; updated from the video that is playing. */
+    private var pipWidth = 16
+    private var pipHeight = 9
+
+    /**
+     * Matches the PiP window to the video being played. A ratio outside the range
+     * the framework accepts is clamped, because [PictureInPictureParams.Builder.setAspectRatio]
+     * throws on an out-of-range value.
+     */
+    fun updatePictureInPictureAspectRatio(width: Int, height: Int) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
+        if (width <= 0 || height <= 0) return
+        if (width == pipWidth && height == pipHeight) return
+        pipWidth = width
+        pipHeight = height
+        if (isInPictureInPictureMode) setPictureInPictureParams(pictureInPictureParams())
+    }
+
     /** Enters picture-in-picture, sizing the window to the video's aspect ratio. */
     fun enterPictureInPicture() {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
-        val params = PictureInPictureParams.Builder()
-            .setAspectRatio(Rational(16, 9))
+        enterPictureInPictureMode(pictureInPictureParams())
+    }
+
+    private fun pictureInPictureParams(): PictureInPictureParams {
+        val ratio = (pipWidth.toFloat() / pipHeight.toFloat()).coerceIn(0.42f, 2.39f)
+        return PictureInPictureParams.Builder()
+            .setAspectRatio(Rational((ratio * 1000).toInt(), 1000))
             .build()
-        enterPictureInPictureMode(params)
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {

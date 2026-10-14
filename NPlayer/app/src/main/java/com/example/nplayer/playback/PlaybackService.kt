@@ -29,9 +29,9 @@ class PlaybackService : MediaSessionService() {
 
     /**
      * Ends the service once there is nothing left to play, so a finished or idle
-     * player does not keep the process and its notification alive in the background.
-     * Playback that is still running is deliberately left alone: background audio is
-     * the point of the service.
+     * player does not keep the process and its notification alive. Playback that is
+     * still running is left alone while the app is open; dismissing the app is handled
+     * by [onTaskRemoved].
      */
     private val idleStopListener = object : Player.Listener {
         override fun onPlaybackStateChanged(playbackState: Int) {
@@ -41,6 +41,17 @@ class PlaybackService : MediaSessionService() {
                     stopSelf()
                 }
             }
+        }
+    }
+
+    /**
+     * Binds the equalizer once the audio session exists. At service creation the id is
+     * still 0, so attaching there alone would leave the equalizer permanently unbound;
+     * this listener fires again when the session is created.
+     */
+    private val audioSessionListener = object : Player.Listener {
+        override fun onAudioSessionIdChanged(audioSessionId: Int) {
+            if (audioSessionId != 0) equalizerController.attach(audioSessionId)
         }
     }
 
@@ -64,6 +75,7 @@ class PlaybackService : MediaSessionService() {
             .build()
 
         exoPlayer.addListener(idleStopListener)
+        exoPlayer.addListener(audioSessionListener)
         player = exoPlayer
 
         // The equalizer binds to the player's audio session, which only exists
@@ -91,6 +103,7 @@ class PlaybackService : MediaSessionService() {
     override fun onDestroy() {
         mediaSession?.run {
             player.removeListener(idleStopListener)
+            player.removeListener(audioSessionListener)
             player.release()
             release()
         }
