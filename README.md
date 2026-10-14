@@ -34,13 +34,25 @@ files are there.
 
 </div>
 
-## What's new in 1.0.0
+## What's new in 1.0.1
 
 > [!IMPORTANT]
 > **The Jellyfin client is gone.** N Player no longer connects to a server. It plays the
 > video and audio already on your device — no URL, no username, no password, and no
 > network access. If you used an earlier build to stream from a Jellyfin server, that
 > workflow has been removed; this is a standalone local player now.
+
+1.0.1 closes the two known gaps from the 1.0.0 folder work and fixes a navigation and a
+privacy bug found while verifying it:
+
+| Change | What it means |
+|---|---|
+| **Real folders on Android 8–9** | On API 26–28, where `RELATIVE_PATH` does not exist, the containing folder is derived from the legacy `DATA` column, so older devices get a real tree instead of one flat list. |
+| **Android paths tested without a device** | Robolectric drives the real repository against a fake MediaStore on API 29 and 28, and the private-folder filtering is tested against the real stores. |
+| **Player route fix** | The player route now declares its optional `playlist` argument, so opening the player from a playlist matches the destination instead of failing. |
+| **Private items can't leak** | Favourites, playlists, and the playback queue now resolve items through a visibility check, so a hidden file cannot reappear through a stale favourite or playlist entry. |
+
+### The 1.0.0 feature set
 
 | Change | What it means |
 |---|---|
@@ -221,11 +233,14 @@ Compose.
 ```
 NPlayer/app/src/main/java/com/example/nplayer/
 ├── data/
-│   ├── media/        MediaStoreRepository (scan), MediaLibrary (cache), MediaItem
-│   └── prefs/        AppSettingsStore, PlaybackPositionStore, ThemeMode
+│   ├── media/        MediaStoreRepository (scan), MediaLibrary (cache), MediaItem,
+│   │                 FolderTree (path and breadcrumb helpers)
+│   ├── prefs/        AppSettingsStore, PlaybackPositionStore, ThemeMode
+│   └── playlists/    Playlist, PlaylistCodec (serialisation), PlaylistStore
 ├── playback/         PlaybackService (MediaSessionService), PlaybackController,
-│                     PlayerSettings (pure helpers: speed, clocks, A–B model)
-└── ui/               Compose: theme, navigation, components, seven screens
+│                     PlayerSettings (pure helpers: speed, clocks, A–B model),
+│                     EqualizerController and EqualizerSettings (audio effects)
+└── ui/               Compose: theme, navigation, components, and the screens
 ```
 
 ### Reading the library
@@ -365,6 +380,19 @@ that is what the download link and QR code point at.
 
 ### GitHub Releases — the current setup
 
+Publishing is automated. `.github/workflows/release.yml` builds the debug APK and
+publishes it whenever a `v*` tag is pushed, so releasing a new build is one command:
+
+```bash
+git tag -a v1.0.1 -m "N Player v1.0.1"
+git push origin v1.0.1
+```
+
+The workflow checks out the tagged commit, builds `:app:assembleDebug`, and then either
+creates the release or updates the existing one — re-running a tag refreshes its asset
+with `--clobber` rather than failing. To re-publish a tag without a new commit, run the
+**Release** workflow from the Actions tab and supply the tag name.
+
 The APK is published as a release asset, so the download URL is stable across versions:
 
 ```
@@ -372,24 +400,30 @@ https://github.com/NSKWeb/NPlayer/releases/latest/download/NPlayer.apk
 ```
 
 That `latest/download/<asset>` form always resolves to the newest release, so the link
-and the QR code never need updating. To publish a new build:
+and the QR code never need updating.
+
+<details>
+<summary>Publishing by hand, without the workflow</summary>
+
+If you would rather not tag, or the workflow is unavailable, publish from a local build.
+The asset keeps its plain name so the stable link above stays valid:
 
 ```bash
 cd NPlayer
 ./gradlew :app:assembleDebug
 
-gh release create v1.1.0 \
+gh release create v1.0.1 \
   app/build/outputs/apk/debug/NPlayer.apk \
-  --title "N Player 1.1.0" --notes "…"
+  --title "N Player 1.0.1" --notes "…"
 ```
 
-Or without the `gh` CLI, via the API — create the release, then upload the asset:
+Or via the API — create the release, then upload the asset:
 
 ```bash
 # 1. create the release, note the returned id
 curl -X POST -H "Authorization: token $GITHUB_TOKEN" \
   https://api.github.com/repos/NSKWeb/NPlayer/releases \
-  -d '{"tag_name":"v1.1.0","name":"N Player 1.1.0"}'
+  -d '{"tag_name":"v1.0.1","name":"N Player 1.0.1"}'
 
 # 2. upload the APK to that release id
 curl -X POST -H "Authorization: token $GITHUB_TOKEN" \
@@ -397,6 +431,8 @@ curl -X POST -H "Authorization: token $GITHUB_TOKEN" \
   --data-binary @app/build/outputs/apk/debug/NPlayer.apk \
   "https://uploads.github.com/repos/NSKWeb/NPlayer/releases/<ID>/assets?name=NPlayer.apk"
 ```
+
+</details>
 
 Because releases are versioned, users can also browse older builds under
 [Releases](https://github.com/NSKWeb/NPlayer/releases).
