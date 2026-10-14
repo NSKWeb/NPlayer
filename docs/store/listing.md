@@ -28,9 +28,8 @@ library. Nothing is uploaded, and the app does not request internet access at
 all, so it cannot send anything anywhere even in principle.
 
 BUILT FOR LONG FILES
-A 10-second skip is fine for a clip. For a film you want bigger steps, so the
-player also gives you quick jumps of 20 and 40 minutes in both directions. The
-seek bar shows the time left, so you always know how much is remaining.
+The seek bar shows the time left, so you always know how much of a film is
+remaining, and a 10-second skip moves you precisely when you need it.
 
 MADE TO BE EASY ON THE EYES
 Rounded artwork cards with the duration on each one, clear section headings,
@@ -94,7 +93,7 @@ DataStore, the "no data collected" answer is accurate and verifiable.
 | File | Use |
 |---|---|
 | `screenshots/phone-1-home.png` | Phone screenshot 1 |
-| `screenshots/phone-2-player.png` | Phone screenshot 2 — shows the 20/40-minute jumps |
+| `screenshots/phone-2-player.png` | Phone screenshot 2 — the player controls |
 | `screenshots/phone-3-detail.png` | Phone screenshot 3 |
 | `screenshots/phone-4-search.png` | Phone screenshot 4 |
 | `screenshots/phone-5-folders.png` | Phone screenshot 5 |

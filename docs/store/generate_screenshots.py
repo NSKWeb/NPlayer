@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """Generate Play Store phone screenshots (1080x1920) for N Player.
 
-The frames reproduce the 1.1.1 UI: the brand near-black/blue palette, rounded
+The frames reproduce the 1.1.2 UI: the brand near-black/blue palette, rounded
 poster cards with a duration pill, section headers with counts, the player's
-+/-10s buttons plus the 20/40-minute quick-jump row, and a selected-label-only
++/-10s buttons, and a selected-label-only
 bottom bar. Output: docs/store/screenshots/phone-*.png
 """
 
@@ -195,14 +195,7 @@ def screen_player():
     parts.append(f'<rect x="{W//2-24}" y="{cy-26}" width="14" height="52" rx="5" fill="{ON_PRIMARY}"/>')
     parts.append(f'<rect x="{W//2+10}" y="{cy-26}" width="14" height="52" rx="5" fill="{ON_PRIMARY}"/>')
     parts.append(f'<g transform="translate({W//2+248},{cy-52})"><path d="M26,0 A26,26 0 1 1 0,26" fill="none" stroke="#FFF" stroke-width="5" stroke-linecap="round"/><path d="M26,0 l0,13 l13,-6 z" fill="#FFF"/>{text(26,44,"10",size=20,fill="#FFF",anchor="middle")}</g>')
-    qy = cy + 150
-    labels = ["+20m", "+40m", "\u221220m", "\u221240m"]
-    step = (W - 2 * PAD) / len(labels)
-    for i, lab in enumerate(labels):
-        cx = int(PAD + step * i + step / 2)
-        parts.append(f'<rect x="{cx-92}" y="{qy-42}" width="184" height="84" rx="42" fill="#FFFFFF" opacity="0.10"/>')
-        parts.append(text(cx, qy + 12, lab, size=36, weight=600, fill="#FFFFFF", anchor="middle"))
-    sy = qy + 210
+    sy = cy + 220
     parts.append(text(PAD, sy, "24:18", size=28, fill="#FFFFFF"))
     parts.append(text(W - PAD, sy, "\u22121:12:04", size=28, fill="#FFFFFF", anchor="end"))
     parts.append(f'<rect x="{PAD}" y="{sy+26}" width="{W-2*PAD}" height="14" rx="7" fill="#33363F"/>')
@@ -217,10 +210,9 @@ def screen_player():
         cx += w + 18
     return frame("".join(parts), "N Player player",
                  "Player screen: full-bleed video under an overlay with back, title and lock, "
-                 "ten-second rewind and forward around a large pause button, a row of "
-                 "+20m, +40m, -20m and -40m quick jumps, a scrubber showing elapsed and "
-                 "remaining time, and a row of speed, aspect, repeat, shuffle, A-B, sleep, "
-                 "night, PiP, equalizer and subtitle controls.")
+                 "ten-second rewind and forward around a large pause button, a scrubber "
+                 "showing elapsed and remaining time, and a row of speed, aspect, repeat, "
+                 "shuffle, A-B, sleep, night, PiP, equalizer and subtitle controls.")
 
 
 def screen_detail():
@@ -340,12 +332,12 @@ def screen_settings():
     parts.append(text(PAD + 36, y + 72, "N Player", size=34, weight=700))
     parts.append(text(PAD + 36, y + 124, "Plays the video and audio already on this device.", size=24, fill=ON_SURFACE_VARIANT))
     parts.append(text(PAD + 36, y + 164, "No account, no server, no network access.", size=24, fill=ON_SURFACE_VARIANT))
-    parts.append(text(PAD + 36, y + 224, "Version 1.1.1 (4)", size=26, fill=PRIMARY, weight=600))
+    parts.append(text(PAD + 36, y + 224, "Version 1.1.2 (5)", size=26, fill=PRIMARY, weight=600))
     parts.append(bottom_bar(5, ["Home", "Search", "Folders", "Favourites", "Playlists", "Settings"]))
     return frame("".join(parts), "N Player settings",
                  "Settings screen: a System/Light/Dark theme selector, a Match my wallpaper "
                  "toggle, a biometric lock toggle, a private folder row, and an About card "
-                 "showing version 1.1.1, with the Settings destination selected.")
+                 "showing version 1.1.2, with the Settings destination selected.")
 
 
 SCREENS = [
@@ -378,7 +370,7 @@ def feature_graphic():
         text(468, 214, "N Player", size=64, weight=700),
         text(468, 272, "Play anything on your phone.", size=34, fill=ON_SURFACE_VARIANT),
         text(468, 322, "No account. No server. No network access.", size=30, fill=PRIMARY, weight=500),
-        text(468, 386, "10 s skips  \u2022  20 / 40 min jumps  \u2022  private folder  \u2022  PiP", size=26, fill=ON_SURFACE_VARIANT),
+        text(468, 386, "10 s skips  \u2022  private folder  \u2022  PiP", size=26, fill=ON_SURFACE_VARIANT),
     ]
     return frame("".join(parts), "N Player feature graphic",
                  "Feature graphic: the N Player name and tagline over two device cards, "

@@ -34,6 +34,14 @@ files are there.
 
 </div>
 
+## What's new in 1.1.2
+
+1.1.2 simplifies the player controls.
+
+| Change | What it means |
+|---|---|
+| **Simpler player controls** | The +20m, +40m, −20m and −40m quick-jump row has been removed. The ±10 s buttons and the scrubber remain, so the transport row is less crowded. |
+
 ## What's new in 1.1.1
 
 1.1.1 fixes thumbnails that looked missing and brings the screenshots on this page in
@@ -243,7 +251,7 @@ button to ask again. Nothing is scanned until you grant it.
 <img src="docs/store/screenshots/phone-4-search.png" alt="Search screen with a Search this device field and matching results" width="230">
 <img src="docs/store/screenshots/phone-3-detail.png" alt="Detail screen with a video thumbnail, title, file metadata, a Play button and a favourite toggle" width="230">
 
-<img src="docs/store/screenshots/phone-2-player.png" alt="Player screen with the video surface, transport controls, the plus and minus 10 second buttons and the 20 and 40 minute quick-jump row" width="230">
+<img src="docs/store/screenshots/phone-2-player.png" alt="Player screen with the video surface and transport controls, including the plus and minus 10 second buttons" width="230">
 <img src="docs/store/screenshots/phone-5-folders.png" alt="Folders screen with a breadcrumb trail and sub-folders with recursive counts" width="230">
 <img src="docs/store/screenshots/phone-6-settings.png" alt="Settings screen with an Appearance section holding a segmented Light, Dark and System theme control, a biometric lock switch, and an About section" width="230">
 

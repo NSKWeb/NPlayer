@@ -75,7 +75,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -84,7 +83,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.ui.PlayerView
 import com.example.nplayer.MainActivity
-import com.example.nplayer.playback.QUICK_SEEK_STEPS
 import com.example.nplayer.playback.SLEEP_TIMER_PRESETS
 import com.example.nplayer.playback.SPEED_PRESETS
 import com.example.nplayer.playback.formatClock
@@ -489,24 +487,6 @@ private fun ControlsOverlay(
         }
 
         Spacer(Modifier.height(10.dp))
-
-        // Long jumps for films: +20/+40 min forward and back, without dragging.
-        Row(
-            Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.Center,
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            QUICK_SEEK_STEPS.forEach { step ->
-                TextButton(onClick = { onSeekBy(step.deltaMillis) }) {
-                    Text(
-                        step.label,
-                        color = Color.White,
-                        style = MaterialTheme.typography.labelLarge,
-                        fontWeight = FontWeight.Medium,
-                    )
-                }
-            }
-        }
 
         Spacer(Modifier.weight(1f))
 
