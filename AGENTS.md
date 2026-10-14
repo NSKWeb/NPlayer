@@ -41,6 +41,18 @@ CI (`.github/workflows/android.yml`) runs `testDebugUnitTest` then `assembleDebu
 every push and pull request. `release.yml` builds and publishes the debug APK as a
 release asset on a `v*` tag.
 
+### Player controls
+
+`ui/player/PlayerScreen.kt` is a Compose overlay over a `PlayerView` with
+`useController = false`; the stock Media3 controller is not used. All player state and
+the gesture handlers live in `ui/player/PlayerViewModel.kt`. Pure, unit-tested helpers
+(enums, speed stepping, clock formatting, A–B model) are in
+`playback/PlayerSettings.kt` — put new pure logic there, not in the composable.
+
+Remaining Arc-Player-parity work, not yet started: equalizer, picture-in-picture,
+playlists, folder/SD-card browsing, private folder, subtitle downloader (needs
+`INTERNET`, which the app deliberately does not request), and FFmpeg for RMVB/WMV/DivX.
+
 ## Conventions
 
 - Only add a dependency when it earns its place. The dependency set is deliberately

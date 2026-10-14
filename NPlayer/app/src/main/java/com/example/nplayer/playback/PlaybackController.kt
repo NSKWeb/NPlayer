@@ -35,6 +35,7 @@ class PlaybackController @Inject constructor(
     private var controller: MediaController? = null
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private var progressJob: Job? = null
+    private var currentKey: String? = null
 
     fun connect(): ListenableFuture<MediaController> {
         val token = SessionToken(context, ComponentName(context, PlaybackService::class.java))
@@ -43,12 +44,22 @@ class PlaybackController @Inject constructor(
         return future
     }
 
-    suspend fun play(item: MediaFile) {
+    suspend fun play(item: MediaFile, subtitleUri: String? = null) {
         val startPosition = positionStore.position(item.key)
 
         val mediaItem = MediaItem.Builder()
             .setMediaId(item.key)
             .setUri(item.uri)
+            .setSubtitleConfigurations(buildList {
+                if (subtitleUri != null) {
+                    add(
+                        MediaItem.SubtitleConfiguration.Builder(android.net.Uri.parse(subtitleUri))
+                            .setMimeType("application/x-subrip")
+                            .setLanguage("und")
+                            .build(),
+                    )
+                }
+            })
             .setMediaMetadata(
                 MediaMetadata.Builder()
                     .setTitle(item.title)
@@ -63,7 +74,25 @@ class PlaybackController @Inject constructor(
             c.prepare()
             c.play()
         }
+        currentKey = item.key
         startProgressLoop(item.key)
+    }
+
+    /** Adds a sidecar subtitle file to the item that is currently playing. */
+    fun addSubtitle(uri: String) {
+        val c = controller ?: return
+        val current = c.currentMediaItem ?: return
+        val updated = current.buildUpon()
+            .setSubtitleConfigurations(
+                listOf(
+                    MediaItem.SubtitleConfiguration.Builder(android.net.Uri.parse(uri))
+                        .setMimeType("application/x-subrip")
+                        .setLanguage("und")
+                        .build(),
+                ),
+            )
+            .build()
+        c.replaceMediaItem(c.currentMediaItemIndex, updated)
     }
 
     private fun startProgressLoop(itemKey: String) {
@@ -80,12 +109,13 @@ class PlaybackController @Inject constructor(
         progressJob?.cancel()
         val position = withContext(Dispatchers.Main) { controller?.currentPosition ?: 0L }
         positionStore.save(itemKey, position)
+        currentKey = null
     }
 
     fun release() {
         progressJob?.cancel()
         controller?.release()
         controller = null
+        currentKey = null
     }
 }
-

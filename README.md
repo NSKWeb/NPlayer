@@ -52,6 +52,31 @@ files are there.
 | **No `INTERNET` permission** | The app cannot make a network request, by design. |
 | **Smaller dependency set** | Room, Retrofit, OkHttp, Gson, WorkManager, and mediarouter were removed. |
 
+### Player controls
+
+The player was rebuilt around a Compose controls overlay instead of the stock Media3
+`PlayerView` chrome. It keeps the on-device, offline character of the app — everything
+below is local playback control, no network involved.
+
+| Control | How it works |
+|---|---|
+| **Gestures** | Double-tap left/right to seek ∓10 s; drag horizontally to scrub; drag vertically on the left half for brightness and the right half for volume. |
+| **Playback speed** | 0.25x–4x presets, applied to the Media3 player. |
+| **Aspect ratio** | Cycles Fit → Fill → Zoom → Stretch. |
+| **A–B repeat** | First press marks A, second marks B, third clears; playback loops between them. |
+| **Sleep timer** | Pauses playback after 5–90 minutes, with a countdown in the overlay. |
+| **Repeat / shuffle** | Off / all / one, and shuffle, mapped onto Media3 repeat and shuffle modes. |
+| **Screen lock** | Freezes the touch layer so an accidental tap can't stop playback; a single unlock button remains. |
+| **Mirror** | Flips the video horizontally. |
+| **Night mode** | Dims the video with a translucent overlay. |
+| **Auto-rotate** | Cycles the window between auto, landscape, and portrait. |
+| **Subtitles** | Attach a sidecar subtitle file to the current item; rendered by Media3. |
+
+Not yet built: an audio equalizer, picture-in-picture, playlists, folder browsing, a
+private folder, a subtitle *downloader* (it would need `INTERNET`), and true all-format
+decoding (RMVB/WMV/DivX would need FFmpeg). These are the remaining Arc-Player-parity
+items.
+
 ## Install
 
 > [!IMPORTANT]
@@ -237,6 +262,18 @@ Because every source is a local `content://` URI, `PlaybackService` builds ExoPl
 a plain `DefaultDataSource` — there is no HTTP data source and no auth header to attach.
 There is also no transcode decision to make: the file is played as it is, exactly what
 the device stored.
+
+### Controls overlay
+
+The player screen does not use `PlayerView`'s built-in controller. It sets
+`useController = false` and draws a Compose overlay instead, so gestures, the aspect
+selector, A–B repeat, the sleep timer, and the rest live in one place and stay in sync
+with `PlayerViewModel`. The view is still a `PlayerView` because that is what renders
+the video surface and Media3's subtitle output.
+
+The overlay reads player state by polling — Media3 has no reactive clock — and applies
+gesture brightness to the Activity window, restoring the previous value when the screen
+leaves.
 
 ### Resume position
 
