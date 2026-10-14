@@ -34,6 +34,16 @@ files are there.
 
 </div>
 
+## What's new in 1.1.1
+
+1.1.1 fixes thumbnails that looked missing and brings the screenshots on this page in
+line with the Play Store listing.
+
+| Change | What it means |
+|---|---|
+| **Thumbnails show up** | Cards were pulling the frame at the very start of the file, which is black in a lot of encodes, so they looked blank against the dark card. They now take a frame from a little way into the video, and a file that cannot be decoded falls back to the placeholder icon instead of an empty box. |
+| **One set of screenshots** | The Screens section below now shows the same images prepared for the store listing. |
+
 ## What's new in 1.1.0
 
 1.1.0 is a design and smoothness pass, plus the long-jump controls that were missing

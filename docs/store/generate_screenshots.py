@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Generate Play Store phone screenshots (1080x1920) for N Player.
 
-The frames reproduce the 1.1.0 UI: the brand near-black/blue palette, rounded
+The frames reproduce the 1.1.1 UI: the brand near-black/blue palette, rounded
 poster cards with a duration pill, section headers with counts, the player's
 +/-10s buttons plus the 20/40-minute quick-jump row, and a selected-label-only
 bottom bar. Output: docs/store/screenshots/phone-*.png
@@ -340,12 +340,12 @@ def screen_settings():
     parts.append(text(PAD + 36, y + 72, "N Player", size=34, weight=700))
     parts.append(text(PAD + 36, y + 124, "Plays the video and audio already on this device.", size=24, fill=ON_SURFACE_VARIANT))
     parts.append(text(PAD + 36, y + 164, "No account, no server, no network access.", size=24, fill=ON_SURFACE_VARIANT))
-    parts.append(text(PAD + 36, y + 224, "Version 1.1.0 (3)", size=26, fill=PRIMARY, weight=600))
+    parts.append(text(PAD + 36, y + 224, "Version 1.1.1 (4)", size=26, fill=PRIMARY, weight=600))
     parts.append(bottom_bar(5, ["Home", "Search", "Folders", "Favourites", "Playlists", "Settings"]))
     return frame("".join(parts), "N Player settings",
                  "Settings screen: a System/Light/Dark theme selector, a Match my wallpaper "
                  "toggle, a biometric lock toggle, a private folder row, and an About card "
-                 "showing version 1.1.0, with the Settings destination selected.")
+                 "showing version 1.1.1, with the Settings destination selected.")
 
 
 SCREENS = [
