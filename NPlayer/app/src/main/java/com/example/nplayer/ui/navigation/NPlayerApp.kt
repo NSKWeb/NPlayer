@@ -128,6 +128,9 @@ fun NPlayerApp() {
                                 )
                             },
                             label = { Text(tab.label) },
+                            // Six destinations is tight on a phone, so only the
+                            // selected one keeps its label; the rest stay as icons.
+                            alwaysShowLabel = false,
                             colors = NavigationBarItemDefaults.colors(
                                 selectedIconColor = MaterialTheme.colorScheme.primary,
                                 selectedTextColor = MaterialTheme.colorScheme.primary,
