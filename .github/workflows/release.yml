@@ -43,8 +43,8 @@ jobs:
       - name: Make gradlew executable
         run: chmod +x ./gradlew
 
-      - name: Build debug APK
-        run: ./gradlew :app:assembleDebug --stacktrace
+      - name: Build release APK
+        run: ./gradlew :app:assembleRelease --stacktrace
 
       - name: Resolve tag
         id: meta
@@ -62,7 +62,7 @@ jobs:
         run: |
           set -eu
           TAG="${{ steps.meta.outputs.tag }}"
-          APK="NPlayer/app/build/outputs/apk/debug/NPlayer.apk"
+          APK="NPlayer/app/build/outputs/apk/release/NPlayer.apk"
           test -f "$APK"
 
           # The asset keeps its plain name so the stable
