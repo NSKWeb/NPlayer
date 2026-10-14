@@ -571,8 +571,15 @@ You need, ready to upload:
 | Feature graphic | 1024×500 PNG |
 | Phone screenshots | 2–8 images, 16:9 or 9:16, min 320 px on the short side |
 
-The `docs/*.svg` mockups in this repo are a good source for the screenshots — export
-them to PNG at the required sizes.
+The listing copy is written and the images are generated:
+
+- `docs/store/listing.md` — app name, short description, full description, and the
+  data-safety answers, ready to paste into Play Console.
+- `docs/store/screenshots/` — `feature-graphic.png` (1024×500) and six phone
+  screenshots (1080×1920). Regenerate them with `python docs/store/generate_screenshots.py`.
+
+Still to add by hand: the 512×512 app icon, exported from `NPlayer/app/src/main/
+res/mipmap-anydpi-v26/ic_launcher.xml` or the source artwork.
 
 ### 6. Write a privacy policy
 
