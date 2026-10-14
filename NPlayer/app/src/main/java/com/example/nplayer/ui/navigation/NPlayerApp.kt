@@ -1,6 +1,7 @@
 package com.example.nplayer.ui.navigation
 
 import android.net.Uri
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
@@ -21,6 +22,7 @@ import androidx.compose.material3.NavigationBar
 import androidx.compose.material3.NavigationBarItem
 import androidx.compose.material3.NavigationBarItemDefaults
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.ScaffoldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -101,8 +103,12 @@ fun NPlayerApp() {
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentRoute = backStackEntry?.destination?.route
     val showTabs = tabs.any { it.route == currentRoute }
+    // The player draws edge to edge and hides the system bars itself, so it must not
+    // be inset by the Scaffold's content padding.
+    val isPlayer = currentRoute == Routes.PLAYER
 
     Scaffold(
+        contentWindowInsets = if (isPlayer) WindowInsets(0, 0, 0, 0) else ScaffoldDefaults.contentWindowInsets,
         bottomBar = {
             if (showTabs) {
                 NavigationBar(

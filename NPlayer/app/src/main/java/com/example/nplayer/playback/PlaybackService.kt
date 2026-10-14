@@ -76,15 +76,16 @@ class PlaybackService : MediaSessionService() {
     override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaSession? = mediaSession
 
     /**
-     * Called when the user swipes the app out of recents. If nothing is playing the
-     * service stops here; an actively playing item is left running so audio continues
-     * and can be resumed from the notification.
+     * Called when the user swipes the app out of recents. Playback ends here too, so
+     * dismissing the app never leaves it running (or holding a notification) in the
+     * background.
      */
     override fun onTaskRemoved(rootIntent: Intent?) {
-        val p = mediaSession?.player
-        if (p == null || !p.playWhenReady || p.mediaItemCount == 0) {
-            stopSelf()
+        mediaSession?.player?.run {
+            stop()
+            clearMediaItems()
         }
+        stopSelf()
     }
 
     override fun onDestroy() {
