@@ -133,3 +133,23 @@ throwing.
   cannot leak back in through a favourite or playlist entry.
 - `README.md` claims must match the code. If you change behaviour (permissions, theme
   options, screens), update the README and the relevant `docs/*.svg` in the same change.
+
+## Thumbnails
+
+- Video artwork goes through Coil's `VideoFrameDecoder` (`coil-video`). By default it
+  decodes **frame 0**, and plenty of encodes open on a black fade-in, slate, or encoder
+  leader. Against the near-black card that looks exactly like a missing thumbnail. Always
+  route card artwork through `ui/components/Components.kt:thumbnailRequest`, which asks
+  for a frame a fraction of the way in via `videoFramePercent`. Do not pass a raw
+  `item.uri` straight to `AsyncImage` for a video.
+- R8 does **not** strip the decoder, so do not go looking for a keep rule first.
+  `VideoFrameDecoder$Factory` survives as an obfuscated class and `newImageLoader`
+  instantiates it. Verify with `dexdump -d` from build-tools on the release dex, not by
+  grepping the dex for the original class name.
+- `ImageLoaderFactory` is a Coil interface, not a Hilt one. `NPlayerApplication`
+  implements it and must stay `open`; the interface is what makes `Coil.imageLoader()`
+  pick up the custom loader, and it is checked at runtime.
+- `README.md`'s Screens section embeds the generated store PNGs
+  (`docs/store/screenshots/`), not the older `docs/screen-*.svg` mockups. Regenerate the
+  PNGs with `docs/store/generate_screenshots.py` after a UI change and keep the two sets
+  from diverging.
