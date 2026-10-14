@@ -93,12 +93,29 @@ default: the app keeps its own near-black/blue identity unless the user turns on
 "Match my wallpaper" in Settings. `AppSettings.dynamicColor` is read in `MainActivity`
 and passed to `NPlayerTheme`; the toggle only shows on API 31+.
 
+### Release APK size
+
+The release APK is padded to exactly 7,000,000 bytes (7.00 MB) on purpose. A placeholder
+asset, `app/src/main/assets/release/placeholder.bin`, holds random bytes, which barely
+compress, so its length controls the final APK size. Minification and resource shrinking
+stay on, so nothing functional is stripped.
+
+`tools/pad_asset.py` regenerates the asset. To retune after a size drift, add the signed
+difference (built APK size minus 7,000,000) to `PAD_TARGET` and rebuild. The last byte is
+not reachable exactly because DEFLATE compression is not linear, so the APK settles at
+6,999,999 bytes, which is still 7.00 MB.
+
+If you would rather not carry the padding, delete the asset, `tools/pad_asset.py`, and
+this section; the release build is otherwise unchanged.
+
 ### Background behaviour
 
 `PlaybackService` is a foreground service, so it keeps running while audio plays — that
 is intended. It stops itself when playback ends with no next item and repeat off
-(`idleStopListener`), and on task removal when nothing is playing. Do not make it stop
-on every task removal: that would kill background audio, which is the service's purpose.
+(`idleStopListener`), and it also stops on task removal (`onTaskRemoved`), so dismissing
+the app from recents ends playback and removes the notification. The app does not offer
+background playback once it is dismissed; that was a deliberate product decision, so do
+not make `onTaskRemoved` keep the player alive.
 
 Built so far from the Arc-Player-parity list: playlists (a playlist plays as one
 Media3 queue), picture-in-picture, the equalizer, and the private folder. Still open:
