@@ -133,8 +133,8 @@ def toggle_row(y, title, sub, on):
     )
 
 
-def frame(inner, title, desc):
-    return f'''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {W} {H}" width="{W}" height="{H}" role="img" aria-labelledby="t d">
+def frame(inner, title, desc, w=W, h=H):
+    return f'''<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {w} {h}" width="{w}" height="{h}" role="img" aria-labelledby="t d">
 <title id="t">{title}</title><desc id="d">{desc}</desc>
 <defs>
 <linearGradient id="art" x1="0" y1="0" x2="1" y2="1">
@@ -149,8 +149,11 @@ def frame(inner, title, desc):
 <linearGradient id="hero" x1="0" y1="0" x2="0" y2="1">
 <stop offset="60%" stop-color="{BG}" stop-opacity="0"/><stop offset="100%" stop-color="{BG}"/>
 </linearGradient>
+<radialGradient id="glow" cx="0.5" cy="0.5" r="0.6">
+<stop offset="0%" stop-color="{PRIMARY}" stop-opacity="0.35"/><stop offset="100%" stop-color="{PRIMARY}" stop-opacity="0"/>
+</radialGradient>
 </defs>
-<rect width="{W}" height="{H}" fill="{BG}"/>
+<rect width="{w}" height="{h}" fill="{BG}"/>
 {inner}
 </svg>'''
 
@@ -355,28 +358,61 @@ SCREENS = [
 ]
 
 
+def feature_graphic():
+    """1024x500 feature graphic for the store listing header."""
+    fw, fh = 1024, 500
+    parts = [
+        f'<rect width="{fw}" height="{fh}" fill="url(#glow)" opacity="0.9"/>',
+        f'<g transform="translate(96,150)">'
+        f'<rect x="0" y="0" width="140" height="200" rx="26" fill="{SURFACE_VARIANT}"/>'
+        f'<rect x="0" y="0" width="140" height="200" rx="26" fill="url(#art)"/>'
+        f'<circle cx="70" cy="100" r="34" fill="#FFFFFF" opacity="0.9"/>'
+        f'<path d="M58,84 l30,16 l-30,16 z" fill="{BG}"/>'
+        f'</g>',
+        f'<g transform="translate(272,110)">'
+        f'<rect x="0" y="0" width="140" height="200" rx="26" fill="{SURFACE_VARIANT}"/>'
+        f'<rect x="0" y="0" width="140" height="200" rx="26" fill="url(#audio)"/>'
+        f'<circle cx="70" cy="100" r="30" fill="{PRIMARY}" opacity="0.18"/>'
+        f'<path d="M62,78 v46 a10,10 0 1 1 -7,-10 v-34 h24 v10 h-17" fill="none" stroke="{ON_SURFACE_VARIANT}" stroke-width="5" stroke-linejoin="round"/>'
+        f'</g>',
+        text(468, 214, "N Player", size=64, weight=700),
+        text(468, 272, "Play anything on your phone.", size=34, fill=ON_SURFACE_VARIANT),
+        text(468, 322, "No account. No server. No network access.", size=30, fill=PRIMARY, weight=500),
+        text(468, 386, "10 s skips  \u2022  20 / 40 min jumps  \u2022  private folder  \u2022  PiP", size=26, fill=ON_SURFACE_VARIANT),
+    ]
+    return frame("".join(parts), "N Player feature graphic",
+                 "Feature graphic: the N Player name and tagline over two device cards, "
+                 "with the no-account, no-server promise and the player features.", w=fw, h=fh)
+
+
+def render(name, svg_text, w, h, out):
+    tmp = pathlib.Path("/tmp/nplayer-store-svg")
+    tmp.mkdir(parents=True, exist_ok=True)
+    svg_path = tmp / f"{name}.svg"
+    svg_path.write_text(svg_text, encoding="utf-8")
+    png = out / f"{name}.png"
+    subprocess.run(
+        [
+            "chromium", "--headless", "--no-sandbox", "--disable-gpu",
+            "--hide-scrollbars", "--force-device-scale-factor=1",
+            f"--window-size={w},{h}",
+            f"--screenshot={png}",
+            f"file://{svg_path}",
+        ],
+        check=True,
+        capture_output=True,
+    )
+    print(f"{png.name}: {png.stat().st_size // 1024} KB")
+
+
 def main():
     out = pathlib.Path(__file__).parent / "screenshots"
     out.mkdir(parents=True, exist_ok=True)
-    tmp = pathlib.Path("/tmp/nplayer-store-svg")
-    tmp.mkdir(parents=True, exist_ok=True)
 
     for name, fn in SCREENS:
-        svg_path = tmp / f"{name}.svg"
-        svg_path.write_text(fn(), encoding="utf-8")
-        png = out / f"{name}.png"
-        subprocess.run(
-            [
-                "chromium", "--headless", "--no-sandbox", "--disable-gpu",
-                "--hide-scrollbars", "--force-device-scale-factor=1",
-                f"--window-size={W},{H}",
-                f"--screenshot={png}",
-                f"file://{svg_path}",
-            ],
-            check=True,
-            capture_output=True,
-        )
-        print(f"{png.name}: {png.stat().st_size // 1024} KB")
+        render(name, fn(), W, H, out)
+
+    render("feature-graphic", feature_graphic(), 1024, 500, out)
 
 
 if __name__ == "__main__":
