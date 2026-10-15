@@ -12,6 +12,13 @@ import androidx.media3.session.MediaSession
 import androidx.media3.session.MediaSessionService
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
+import com.example.nplayer.data.prefs.PlaybackSettingsStore
 
 /**
  * Foreground media service owning the [ExoPlayer] instance and a
@@ -23,9 +30,11 @@ import javax.inject.Inject
 class PlaybackService : MediaSessionService() {
 
     @Inject lateinit var equalizerController: EqualizerController
+    @Inject lateinit var playbackSettings: PlaybackSettingsStore
 
     private var mediaSession: MediaSession? = null
     private var player: ExoPlayer? = null
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
 
     /**
      * Ends the service once there is nothing left to play, so a finished or idle
@@ -83,6 +92,14 @@ class PlaybackService : MediaSessionService() {
         exoPlayer.audioSessionId.takeIf { it != 0 }?.let(equalizerController::attach)
 
         mediaSession = MediaSession.Builder(this, exoPlayer).build()
+
+        // Autoplay is an ExoPlayer-level flag, so it is mirrored from the setting here
+        // rather than through the controller, which does not expose it.
+        scope.launch {
+            playbackSettings.settings.collectLatest { prefs ->
+                player?.pauseAtEndOfMediaItems = !prefs.autoplayNext
+            }
+        }
     }
 
     override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaSession? = mediaSession
@@ -109,6 +126,7 @@ class PlaybackService : MediaSessionService() {
         }
         mediaSession = null
         player = null
+        scope.cancel()
         // The session is gone with the service, so the equalizer must rebind next time.
         equalizerController.release()
         super.onDestroy()

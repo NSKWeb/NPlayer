@@ -1,9 +1,13 @@
 package com.example.nplayer.ui.player
 
 import android.app.Activity
+import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.ContextWrapper
+import android.content.Intent
+import android.content.IntentFilter
 import android.content.pm.ActivityInfo
+import android.os.BatteryManager
 import android.view.View
 import android.view.ViewGroup
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -56,6 +60,12 @@ import com.example.nplayer.playback.formatSpeed
 import androidx.compose.material.icons.filled.Subtitles
 import androidx.compose.material.icons.filled.Timer
 import com.example.nplayer.data.media.MediaKind
+import com.example.nplayer.data.prefs.OrientationMode
+import com.example.nplayer.data.prefs.OverlayItem
+import com.example.nplayer.data.prefs.ResumeMode
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
@@ -70,8 +80,10 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -157,6 +169,8 @@ private fun VideoPlayerScreen(
 ) {
     val equalizerState by viewModel.equalizer.collectAsStateWithLifecycle()
 
+    rememberPlayerActive(autoPip = state.prefs.autoPip)
+
     var controlsVisible by remember { mutableStateOf(true) }
     var position by remember { mutableLongStateOf(0L) }
     var duration by remember { mutableLongStateOf(0L) }
@@ -186,6 +200,20 @@ private fun VideoPlayerScreen(
                 if (!scrubbing) position = it.currentPosition
             }
             delay(500)
+        }
+    }
+
+    // Apply the configured default orientation once the video's own size is known, so
+    // "Video orientation" has something to follow.
+    LaunchedEffect(state.prefs.orientationMode, state.controller) {
+        val p = state.controller ?: return@LaunchedEffect
+        while (true) {
+            val size = p.videoSize
+            if (size.width > 0 && size.height > 0) {
+                activity?.applyDefaultOrientation(state.prefs.orientationMode, size.width, size.height)
+                break
+            }
+            delay(200)
         }
     }
 
@@ -241,18 +269,19 @@ private fun VideoPlayerScreen(
         Modifier
             .fillMaxSize()
             .background(Color.Black)
-            .pointerInput(state.locked) {
-                if (state.locked) return@pointerInput
+            .pointerInput(state.locked, state.prefs.gesturesEnabled, state.prefs.seekStepSeconds) {
+                if (state.locked || !state.prefs.gesturesEnabled) return@pointerInput
                 detectTapGestures(
                     onTap = { controlsVisible = !controlsVisible },
                     onDoubleTap = { offset ->
-                        if (offset.x < size.width / 2f) viewModel.seekBy(-10_000)
-                        else viewModel.seekBy(10_000)
+                        val step = state.prefs.seekStepSeconds * 1_000L
+                        if (offset.x < size.width / 2f) viewModel.seekBy(-step)
+                        else viewModel.seekBy(step)
                     },
                 )
             }
-            .pointerInput(state.locked) {
-                if (state.locked) return@pointerInput
+            .pointerInput(state.locked, state.prefs.gesturesEnabled) {
+                if (state.locked || !state.prefs.gesturesEnabled) return@pointerInput
                 var dx = 0f
                 var dy = 0f
                 detectDragGestures(
@@ -403,6 +432,7 @@ private fun VideoPlayerScreen(
                     },
                     onTogglePlay = viewModel::togglePlayPause,
                     onSeekBy = viewModel::seekBy,
+                    onResume = { viewModel.seekTo(state.savedPositionMillis) },
                     onPrevious = viewModel::skipToPrevious,
                     onNext = viewModel::skipToNext,
                     onSpeed = { showSpeedSheet = true },
@@ -497,6 +527,7 @@ private fun ControlsOverlay(
     onScrubEnd: () -> Unit,
     onTogglePlay: () -> Unit,
     onSeekBy: (Long) -> Unit,
+    onResume: () -> Unit,
     onPrevious: () -> Unit,
     onNext: () -> Unit,
     onSpeed: () -> Unit,
@@ -561,8 +592,8 @@ private fun ControlsOverlay(
             horizontalArrangement = Arrangement.Center,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            IconButton(onClick = { onSeekBy(-10_000) }) {
-                Icon(Icons.Filled.Replay10, contentDescription = "Back 10 seconds", tint = Color.White, modifier = Modifier.size(38.dp))
+            IconButton(onClick = { onSeekBy(-state.prefs.seekStepSeconds * 1_000L) }) {
+                Icon(Icons.Filled.Replay10, contentDescription = "Rewind", tint = Color.White, modifier = Modifier.size(38.dp))
             }
             Spacer(Modifier.width(12.dp))
             IconButton(onClick = onPrevious, enabled = state.hasPrevious) {
@@ -596,8 +627,8 @@ private fun ControlsOverlay(
                 )
             }
             Spacer(Modifier.width(12.dp))
-            IconButton(onClick = { onSeekBy(10_000) }) {
-                Icon(Icons.Filled.Forward10, contentDescription = "Forward 10 seconds", tint = Color.White, modifier = Modifier.size(38.dp))
+            IconButton(onClick = { onSeekBy(state.prefs.seekStepSeconds * 1_000L) }) {
+                Icon(Icons.Filled.Forward10, contentDescription = "Fast forward", tint = Color.White, modifier = Modifier.size(38.dp))
             }
         }
 
@@ -625,12 +656,25 @@ private fun ControlsOverlay(
                     .weight(1f)
                     .padding(horizontal = 8.dp),
             )
-            // Time left in the file, so the length is readable at a glance.
-            Text(
-                if (duration > 0) "−${formatClock(remaining)}" else formatClock(duration),
-                color = Color.White,
-                style = MaterialTheme.typography.labelMedium,
-            )
+            // Readouts chosen in Display settings: remaining time, clock, battery.
+            val readouts = buildList {
+                if (OverlayItem.REMAINING_TIME in state.prefs.overlayItems) {
+                    add(if (duration > 0) "−${formatClock(remaining)}" else formatClock(duration))
+                }
+                if (OverlayItem.CLOCK in state.prefs.overlayItems) {
+                    add(clockLabel())
+                }
+                if (OverlayItem.BATTERY in state.prefs.overlayItems) {
+                    add(batteryLabel())
+                }
+            }
+            if (readouts.isNotEmpty()) {
+                Text(
+                    readouts.joinToString("   "),
+                    color = Color.White,
+                    style = MaterialTheme.typography.labelMedium,
+                )
+            }
         }
 
         Row(
@@ -641,6 +685,15 @@ private fun ControlsOverlay(
             horizontalArrangement = Arrangement.spacedBy(4.dp),
         ) {
             OverlayButton(Icons.Filled.Speed, formatSpeed(state.speed), onSpeed)
+            // In "ask" mode playback starts at the top, so the saved position is offered
+            // as a one-tap jump instead of being applied silently.
+            if (state.prefs.resumeMode == ResumeMode.ASK && state.savedPositionMillis > 0) {
+                OverlayButton(
+                    Icons.Filled.Replay10,
+                    "Resume ${formatClock(state.savedPositionMillis)}",
+                    onResume,
+                )
+            }
             OverlayButton(Icons.Filled.AspectRatio, state.resizeMode.label, onResize)
             OverlayButton(
                 if (state.repeatMode.media3Mode == 1) Icons.Filled.RepeatOne else Icons.Filled.Repeat,
@@ -929,9 +982,80 @@ private fun Activity.toggleOrientation() {
 }
 
 /**
+ * The current wall-clock time as "HH:mm", refreshed once a minute while it is shown.
+ */
+@Composable
+private fun clockLabel(): String {
+    val time by produceState(initialValue = System.currentTimeMillis()) {
+        while (true) {
+            value = System.currentTimeMillis()
+            // Sleep to the next minute boundary so the label changes on the minute.
+            delay(60_000 - (value % 60_000))
+        }
+    }
+    return SimpleDateFormat("HH:mm", Locale.getDefault()).format(Date(time))
+}
+
+/**
+ * The device battery percentage, or null when the level cannot be read. Registered for
+ * the lifetime of the composition so the figure follows the battery while it is shown.
+ */
+@Composable
+private fun batteryLabel(): String? {
+    val context = LocalContext.current
+    var level by remember { mutableIntStateOf(-1) }
+    DisposableEffect(Unit) {
+        val manager = context.getSystemService(Context.BATTERY_SERVICE) as? BatteryManager
+        val receiver = object : BroadcastReceiver() {
+            override fun onReceive(c: Context?, intent: Intent?) {
+                val raw = intent?.getIntExtra(BatteryManager.EXTRA_LEVEL, -1) ?: -1
+                val scale = intent?.getIntExtra(BatteryManager.EXTRA_SCALE, 100) ?: 100
+                if (raw >= 0 && scale > 0) level = raw * 100 / scale
+            }
+        }
+        context.registerReceiver(receiver, IntentFilter(Intent.ACTION_BATTERY_CHANGED))
+        level = manager?.getIntProperty(BatteryManager.BATTERY_PROPERTY_CAPACITY) ?: -1
+        onDispose { runCatching { context.unregisterReceiver(receiver) } }
+    }
+    return level.takeIf { it >= 0 }?.let { "$it%" }
+}
+
+/**
+ * Tells [MainActivity] that the player screen is open, so its auto-PiP hook knows
+ * whether leaving the app should shrink the video to a floating window.
+ */
+@Composable
+fun rememberPlayerActive(autoPip: Boolean) {
+    val context = LocalContext.current
+    DisposableEffect(autoPip) {
+        val activity = context.findActivity() as? MainActivity
+        activity?.setPlayerState(playerActive = true, autoPip = autoPip)
+        onDispose { activity?.setPlayerState(playerActive = false, autoPip = autoPip) }
+    }
+}
+
+/**
  * Hands orientation back to the device. The rotate button locks landscape, and that
  * lock would otherwise outlive the player and hold every later screen sideways.
  */
 fun Activity.resetOrientation() {
     requestedOrientation = ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+}
+
+/**
+ * Applies the configured default orientation when a video opens. [OrientationMode.VIDEO]
+ * waits for the file's own size and is handled by the caller, so it maps to
+ * "follow the sensor" until that size is known.
+ */
+fun Activity.applyDefaultOrientation(mode: OrientationMode, videoWidth: Int, videoHeight: Int) {
+    requestedOrientation = when (mode) {
+        OrientationMode.AUTO -> ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+        OrientationMode.PORTRAIT -> ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT
+        OrientationMode.LANDSCAPE -> ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+        OrientationMode.VIDEO -> when {
+            videoWidth > videoHeight -> ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+            videoHeight > videoWidth -> ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT
+            else -> ActivityInfo.SCREEN_ORIENTATION_UNSPECIFIED
+        }
+    }
 }

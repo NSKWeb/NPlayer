@@ -2,6 +2,7 @@ package com.example.nplayer.data.media
 
 import com.example.nplayer.data.lyrics.pickLyricsFile
 import com.example.nplayer.data.prefs.AppSettingsStore
+import com.example.nplayer.data.prefs.PlaybackSettingsStore
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -22,6 +23,7 @@ import javax.inject.Singleton
 class MediaLibrary @Inject constructor(
     private val repository: MediaStoreRepository,
     private val settingsStore: AppSettingsStore,
+    private val playbackSettings: PlaybackSettingsStore,
 ) {
     private val _items = MutableStateFlow<List<MediaItem>>(emptyList())
     val items: StateFlow<List<MediaItem>> = _items.asStateFlow()
@@ -38,11 +40,23 @@ class MediaLibrary @Inject constructor(
      */
     private val hiddenKeys = MutableStateFlow<Set<String>>(emptySet())
 
+    /** How lists are arranged; kept current from settings so the order applies live. */
+    val arrangement = MutableStateFlow(Arrangement())
+
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
     init {
         scope.launch {
             settingsStore.settings.collect { hiddenKeys.value = it.privateItems }
+        }
+        scope.launch {
+            playbackSettings.settings.collect { prefs ->
+                arrangement.value = Arrangement(
+                    files = prefs.fileSortOrder,
+                    folders = prefs.folderSortOrder,
+                    foldersFirst = prefs.foldersFirst,
+                )
+            }
         }
     }
 
@@ -129,27 +143,42 @@ class MediaLibrary @Inject constructor(
     }
 
     fun videos(): List<MediaItem> = visible().filter { it.kind == MediaKind.VIDEO }
+        .sortedWith(arrangement.value.files.comparator())
 
     fun audio(): List<MediaItem> = visible().filter { it.kind == MediaKind.AUDIO }
+        .sortedWith(arrangement.value.files.comparator())
 
     /** The immediate child folders of [folder] that contain something, with counts. */
     fun foldersIn(folder: String): List<FolderSummary> =
         childFolders(folder, visible().map { it.folder })
+            .sortedWith(arrangement.value.folders.comparator())
 
-    /** Items directly inside [folder], newest first, excluding items in sub-folders. */
+    /** Items directly inside [folder], arranged as the settings ask, sub-folders excluded. */
     fun itemsIn(folder: String): List<MediaItem> {
         val normalized = normalizeFolder(folder)
         return visible()
             .filter { normalizeFolder(it.folder) == normalized }
-            .sortedByDescending { it.dateAddedSeconds }
+            .sortedWith(arrangement.value.files.comparator())
     }
 
     fun search(query: String): List<MediaItem> {
         if (query.isBlank()) return emptyList()
-        return visible().filter { item ->
-            item.title.contains(query, ignoreCase = true) ||
-                item.album?.contains(query, ignoreCase = true) == true ||
-                item.artist?.contains(query, ignoreCase = true) == true
-        }
+        return visible()
+            .filter { item ->
+                item.title.contains(query, ignoreCase = true) ||
+                    item.album?.contains(query, ignoreCase = true) == true ||
+                    item.artist?.contains(query, ignoreCase = true) == true
+            }
+            .sortedWith(arrangement.value.files.comparator())
     }
+
+    /** Whether folders should be listed above files in the folder browser. */
+    fun foldersFirst(): Boolean = arrangement.value.foldersFirst
 }
+
+/** The live arrangement choices, mirrored from settings so lists re-sort immediately. */
+data class Arrangement(
+    val files: FileSortOrder = FileSortOrder.DATE_NEWEST,
+    val folders: FolderSortOrder = FolderSortOrder.NAME_ASC,
+    val foldersFirst: Boolean = true,
+)

@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.nplayer.data.media.MediaItem
 import com.example.nplayer.data.media.MediaLibrary
+import com.example.nplayer.data.prefs.PlaybackSettingsStore
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -16,6 +17,8 @@ data class HomeUiState(
     val isLoading: Boolean = true,
     val videos: List<MediaItem> = emptyList(),
     val audio: List<MediaItem> = emptyList(),
+    /** False when the Music section is switched off in settings. */
+    val showMusic: Boolean = true,
 ) {
     val isEmpty: Boolean get() = !isLoading && videos.isEmpty() && audio.isEmpty()
 }
@@ -23,10 +26,21 @@ data class HomeUiState(
 @HiltViewModel
 class HomeViewModel @Inject constructor(
     private val library: MediaLibrary,
+    private val playbackSettings: PlaybackSettingsStore,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(HomeUiState())
     val state: StateFlow<HomeUiState> = _state.asStateFlow()
+
+    init {
+        // The Music switch changes what the grid shows, so it is watched rather than
+        // read once on entry.
+        viewModelScope.launch {
+            playbackSettings.settings.collect { prefs ->
+                _state.update { it.copy(showMusic = prefs.showMusic) }
+            }
+        }
+    }
 
     fun refresh() {
         viewModelScope.launch {

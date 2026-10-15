@@ -61,8 +61,16 @@ class PlaybackController @Inject constructor(
      */
     suspend fun connectAndAwait(): MediaController = connect().await()
 
-    suspend fun play(item: MediaFile, subtitleUri: String? = null, sidecars: List<SubtitleFile> = emptyList()) {
-        val startPosition = positionStore.position(item.key)
+    /** The saved position for [key], or 0 when nothing has been recorded yet. */
+    suspend fun savedPosition(key: String): Long = positionStore.position(key)
+
+    suspend fun play(
+        item: MediaFile,
+        subtitleUri: String? = null,
+        sidecars: List<SubtitleFile> = emptyList(),
+        resume: Boolean = true,
+    ) {
+        val startPosition = if (resume) positionStore.position(item.key) else 0L
 
         val mediaItem = mediaItemFor(item, subtitleUri, sidecars)
 
@@ -81,13 +89,14 @@ class PlaybackController @Inject constructor(
         items: List<MediaFile>,
         startIndex: Int = 0,
         sidecars: (MediaFile) -> List<SubtitleFile> = { emptyList() },
+        resume: Boolean = true,
     ) {
         if (items.isEmpty()) return
         val start = startIndex.coerceIn(items.indices)
         // The item the viewer opened resumes where they left off; the rest of the queue
         // starts at the beginning, because a position only belongs to the item it was
         // saved for.
-        val startPosition = positionStore.position(items[start].key)
+        val startPosition = if (resume) positionStore.position(items[start].key) else 0L
         val mediaItems = items.map { mediaItemFor(it, subtitleUri = null, sidecars = sidecars(it)) }
         withContext(Dispatchers.Main) {
             val c = controller ?: return@withContext
@@ -295,6 +304,17 @@ class PlaybackController @Inject constructor(
         val current = controller?.currentMediaItem?.mediaId ?: itemKey
         val position = controller?.currentPosition ?: 0L
         currentKey = null
+        scope.launch { positionStore.save(current, position) }
+    }
+
+    /**
+     * Saves where playback has reached without stopping it. Used when the player screen
+     * closes but the sound is meant to carry on in the background. The write runs on the
+     * controller's own scope so it survives the caller's view model going away.
+     */
+    fun savePosition(itemKey: String) {
+        val current = controller?.currentMediaItem?.mediaId ?: itemKey
+        val position = controller?.currentPosition ?: 0L
         scope.launch { positionStore.save(current, position) }
     }
 

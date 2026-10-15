@@ -111,7 +111,7 @@ fun HomeScreen(
                 }
             }
 
-            if (state.audio.isNotEmpty()) {
+            if (state.showMusic && state.audio.isNotEmpty()) {
                 item(span = { GridItemSpan(maxLineSpan) }) {
                     SectionHeader("Music", count = state.audio.size)
                 }

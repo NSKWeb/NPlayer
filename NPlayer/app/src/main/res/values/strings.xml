@@ -31,4 +31,55 @@
     <string name="error_generic">Something went wrong</string>
     <string name="retry">Retry</string>
     <string name="loading">Loading…</string>
+
+    <string name="settings_files">Files</string>
+    <string name="settings_playback">Playback</string>
+    <string name="settings_subtitles">Subtitles</string>
+    <string name="settings_display">Display</string>
+    <string name="settings_music">Music</string>
+    <string name="settings_storage">Storage</string>
+
+    <string name="resume_title">Resume playback</string>
+    <string name="resume_subtitle">What to do when a file has a saved position</string>
+
+    <string name="remember_brightness_title">Remember brightness</string>
+    <string name="remember_brightness_subtitle">When off, brightness follows the system</string>
+    <string name="remember_background_title">Remember background play</string>
+    <string name="remember_background_subtitle">Keep playing when you leave the app</string>
+    <string name="remember_aspect_title">Remember aspect ratio</string>
+    <string name="remember_aspect_subtitle">Use the last aspect ratio for every video</string>
+    <string name="remember_speed_title">Remember speed</string>
+    <string name="remember_speed_subtitle">Use the last playback speed for every video</string>
+    <string name="orientation_title">Default screen orientation</string>
+    <string name="seek_step_title">Fast forward and rewind time</string>
+    <string name="autoplay_title">Autoplay next</string>
+    <string name="autoplay_subtitle">When off, playback stops after the video ends</string>
+    <string name="auto_pip_title">Auto Picture-in-Picture</string>
+    <string name="auto_pip_subtitle">Shrink to a floating window when you switch apps</string>
+    <string name="gestures_title">Gesture control</string>
+    <string name="gestures_subtitle">Swipe for brightness, volume and seeking</string>
+
+    <string name="subtitles_default_title">Show subtitles by default</string>
+    <string name="subtitles_default_subtitle">Turn subtitles on when a file has a track</string>
+    <string name="preferred_audio_language_title">Preferred audio language</string>
+    <string name="preferred_subtitle_language_title">Preferred subtitle language</string>
+    <string name="language_any">No language preference</string>
+
+    <string name="display_overlay_title">Display during playback</string>
+    <string name="display_overlay_subtitle">Readouts shown over the video</string>
+
+    <string name="show_music_title">Show music</string>
+    <string name="show_music_subtitle">Show audio alongside video</string>
+
+    <string name="settings_arrangement">File arrangement</string>
+    <string name="file_sort_title">Sort files by</string>
+    <string name="folder_sort_title">Sort folders by</string>
+    <string name="folders_first_title">Folders first</string>
+    <string name="folders_first_subtitle">List folders above files inside a folder</string>
+
+    <string name="clear_cache_title">Clear cache</string>
+    <string name="clear_cache_subtitle">Free up space used by thumbnails and temporary files</string>
+    <string name="clear_cache_button">Clear</string>
+    <string name="clear_cache_done">Freed %1$s</string>
+    <string name="clear_cache_empty">Nothing to clear</string>
 </resources>

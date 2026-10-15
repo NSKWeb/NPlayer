@@ -18,6 +18,8 @@ data class FoldersUiState(
     val folders: List<FolderSummary> = emptyList(),
     val items: List<MediaItem> = emptyList(),
     val isLoaded: Boolean = false,
+    /** Whether folders are listed above files, as the arrangement setting asks. */
+    val foldersFirst: Boolean = true,
 )
 
 @HiltViewModel
@@ -28,7 +30,15 @@ class FoldersViewModel @Inject constructor(
     private val _state = MutableStateFlow(FoldersUiState())
     val state: StateFlow<FoldersUiState> = _state.asStateFlow()
 
-    init { load() }
+    init {
+        // Arrangement can change while this screen is open, so it is watched.
+        viewModelScope.launch {
+            library.arrangement.collect {
+                _state.update { s -> s.copy(foldersFirst = library.foldersFirst()) }
+            }
+        }
+        load()
+    }
 
     private fun load() {
         viewModelScope.launch {
@@ -56,6 +66,7 @@ class FoldersViewModel @Inject constructor(
             it.copy(
                 folders = library.foldersIn(folder),
                 items = library.itemsIn(folder),
+                foldersFirst = library.foldersFirst(),
                 isLoaded = true,
             )
         }

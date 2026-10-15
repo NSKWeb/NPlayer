@@ -11,7 +11,12 @@ the `INTERNET` permission.
     - `data/media/` — `MediaStoreRepository` (scan), `MediaLibrary` (in-memory cache),
       `MediaItem` (domain model keyed by `content://` URI), `FolderTree` (pure tree logic).
     - `data/prefs/` — `AppSettingsStore` (theme, biometric lock, favourites, private
-      folder), `PlaybackPositionStore` (resume positions), `ThemeMode`.
+      folder), `PlaybackSettingsStore` (player preferences: resume mode, seek step,
+      orientation, overlay, subtitles, language, file arrangement), `PlaybackPositionStore`
+      (resume positions), `ThemeMode`.
+    - `data/media/SortOrder.kt` — the `FileSortOrder`/`FolderSortOrder` enums and their
+      comparators. `MediaLibrary` mirrors the chosen order into an `Arrangement` flow and
+      applies it in `videos`, `audio`, `itemsIn`, `foldersIn` and `search`.
     - `data/playlists/` — `Playlist` (model), `PlaylistCodec` (pure JSON), `PlaylistStore`.
     - `playback/` — `PlaybackService` (`MediaSessionService`), `PlaybackController`,
       `EqualizerController` (platform equalizer bound to the player's audio session).
@@ -175,6 +180,17 @@ throwing.
   cannot leak back in through a favourite or playlist entry.
 - `README.md` claims must match the code. If you change behaviour (permissions, theme
   options, screens), update the README and the relevant `docs/*.svg` in the same change.
+- Player preferences live in `PlaybackSettingsStore`, separate from `AppSettingsStore`.
+  A setting that only the player consults (resume mode, seek step, orientation, overlay,
+  gestures, subtitle/audio language, file arrangement) belongs there; app-wide things
+  (theme, biometric lock, favourites, private folder) stay in `AppSettingsStore`.
+- The release APK is padded to ~7 MB by `app/src/main/assets/release/placeholder.bin`,
+  regenerated with `tools/pad_asset.py` (`PAD_TARGET` is the raw byte count before
+  base64). Adding code shrinks the placeholder's effective headroom, so retune it when
+  the size drifts: build, compare the APK against 7,000,000, and adjust `PAD_TARGET` by
+  the signed difference. The asset is regenerated from a fixed seed, so a given
+  `PAD_TARGET` is reproducible; note that a 1-byte change to the raw count often does not
+  change the base64 file size (it rounds to 3-byte groups).
 
 ## Thumbnails
 

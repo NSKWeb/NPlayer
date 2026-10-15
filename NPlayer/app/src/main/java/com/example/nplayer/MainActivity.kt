@@ -16,6 +16,8 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.nplayer.ui.BiometricGate
 import com.example.nplayer.ui.navigation.NPlayerApp
+import com.example.nplayer.ui.player.rememberPlayerActive
+import com.example.nplayer.ui.player.resetOrientation
 import com.example.nplayer.ui.settings.SettingsViewModel
 import com.example.nplayer.ui.theme.NPlayerTheme
 import com.example.nplayer.ui.theme.resolveDark
@@ -27,6 +29,10 @@ class MainActivity : FragmentActivity() {
     /** The shape of the PiP window; updated from the video that is playing. */
     private var pipWidth = 16
     private var pipHeight = 9
+
+    /** Set by the player screen: whether it is open, and whether auto-PiP is on. */
+    private var playerScreenActive = false
+    private var autoPipEnabled = false
 
     /**
      * Matches the PiP window to the video being played. A ratio outside the range
@@ -46,6 +52,25 @@ class MainActivity : FragmentActivity() {
     fun enterPictureInPicture() {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
         enterPictureInPictureMode(pictureInPictureParams())
+    }
+
+    /**
+     * Shrinks to the floating window when the viewer leaves the app mid-video, but only
+     * when the auto-PiP setting is on and the player screen is the one being left.
+     */
+    override fun onUserLeaveHint() {
+        super.onUserLeaveHint()
+        if (!autoPipEnabled) return
+        if (!playerScreenActive) return
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
+        if (isInPictureInPictureMode) return
+        enterPictureInPictureMode(pictureInPictureParams())
+    }
+
+    /** Lets the composition report the auto-PiP setting and whether the player is open. */
+    fun setPlayerState(playerActive: Boolean, autoPip: Boolean) {
+        playerScreenActive = playerActive
+        autoPipEnabled = autoPip
     }
 
     private fun pictureInPictureParams(): PictureInPictureParams {

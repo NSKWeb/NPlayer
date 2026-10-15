@@ -9,6 +9,7 @@ import android.net.Uri
 import android.provider.MediaStore
 import androidx.test.core.app.ApplicationProvider
 import com.example.nplayer.data.prefs.AppSettingsStore
+import com.example.nplayer.data.prefs.PlaybackSettingsStore
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -74,7 +75,8 @@ class PrivateFolderTest {
         )
 
         val settingsStore = AppSettingsStore(context)
-        val library = MediaLibrary(MediaStoreRepository(context), settingsStore)
+        val playbackSettings = PlaybackSettingsStore(context)
+        val library = MediaLibrary(MediaStoreRepository(context), settingsStore, playbackSettings)
         library.refresh()
 
         assertEquals(2, library.videos().size)

@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.GridItemSpan
+import androidx.compose.foundation.lazy.grid.LazyGridScope
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.rememberScrollState
@@ -75,30 +76,43 @@ fun FoldersScreen(
                 )
             }
 
-            if (state.folders.isNotEmpty()) {
-                item(span = { GridItemSpan(maxLineSpan) }) {
-                    SectionHeader("Folders · ${state.folders.size}")
+            // Folders and files are two groups whose order follows the arrangement
+            // setting: folders on top, or files on top, as the viewer prefers.
+            val foldersSection: LazyGridScope.() -> Unit = {
+                if (state.folders.isNotEmpty()) {
+                    item(span = { GridItemSpan(maxLineSpan) }) {
+                        SectionHeader("Folders · ${state.folders.size}")
+                    }
+                    items(state.folders, key = { it.path }) { folder ->
+                        FolderRow(folder = folder, onClick = { viewModel.open(folder.path) })
+                    }
                 }
-                items(state.folders, key = { it.path }) { folder ->
-                    FolderRow(folder = folder, onClick = { viewModel.open(folder.path) })
+            }
+            val filesSection: LazyGridScope.() -> Unit = {
+                if (state.items.isNotEmpty()) {
+                    item(span = { GridItemSpan(maxLineSpan) }) {
+                        SectionHeader("Files · ${state.items.size}")
+                    }
+                    items(state.items, key = { it.key }) { item ->
+                        val isVideo = item.kind == MediaKind.VIDEO
+                        PosterCard(
+                            title = item.title,
+                            imageModel = if (isVideo) item.uri else null,
+                            subtitle = item.artist ?: item.album ?: item.durationLabel,
+                            aspectRatio = if (isVideo) 16f / 9f else 2f / 3f,
+                            placeholderIcon = Icons.Filled.Movie,
+                            onClick = { onOpenDetail(item.key) },
+                        )
+                    }
                 }
             }
 
-            if (state.items.isNotEmpty()) {
-                item(span = { GridItemSpan(maxLineSpan) }) {
-                    SectionHeader("Files · ${state.items.size}")
-                }
-                items(state.items, key = { it.key }) { item ->
-                    val isVideo = item.kind == MediaKind.VIDEO
-                    PosterCard(
-                        title = item.title,
-                        imageModel = if (isVideo) item.uri else null,
-                        subtitle = item.artist ?: item.album ?: item.durationLabel,
-                        aspectRatio = if (isVideo) 16f / 9f else 2f / 3f,
-                        placeholderIcon = Icons.Filled.Movie,
-                        onClick = { onOpenDetail(item.key) },
-                    )
-                }
+            if (state.foldersFirst) {
+                foldersSection()
+                filesSection()
+            } else {
+                filesSection()
+                foldersSection()
             }
         }
     }

@@ -11,6 +11,9 @@ import com.example.nplayer.data.lyrics.activeLyricIndex
 import com.example.nplayer.data.media.MediaLibrary
 import com.example.nplayer.data.media.MediaItem
 import com.example.nplayer.data.playlists.PlaylistStore
+import com.example.nplayer.data.prefs.PlaybackSettings
+import com.example.nplayer.data.prefs.PlaybackSettingsStore
+import com.example.nplayer.data.prefs.ResumeMode
 import com.example.nplayer.playback.AbRepeat
 import com.example.nplayer.playback.AudioTrack
 import com.example.nplayer.playback.EqualizerController
@@ -69,6 +72,10 @@ data class PlayerUiState(
     val activeLyric: Int = -1,
     /** Every audio track in the current item, so one can be chosen over another. */
     val audioTracks: List<AudioTrack> = emptyList(),
+    /** The saved position of the item being opened, when one exists. */
+    val savedPositionMillis: Long = 0,
+    /** Playback preferences in force for this session, so the UI can honour them. */
+    val prefs: PlaybackSettings = PlaybackSettings(),
 )
 
 @UnstableApi
@@ -79,6 +86,7 @@ class PlayerViewModel @Inject constructor(
     private val playlistStore: PlaylistStore,
     private val equalizerController: EqualizerController,
     private val lyricsRepository: LyricsRepository,
+    private val playbackSettings: PlaybackSettingsStore,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(PlayerUiState())
@@ -108,11 +116,14 @@ class PlayerViewModel @Inject constructor(
         subtitlesUserDisabled = false
         viewModelScope.launch {
             val controller = playbackController.connectAndAwait()
+            val prefs = playbackSettings.current()
             _state.update {
                 it.copy(
                     player = controller,
                     controller = controller,
-                    speed = controller.playbackParameters.speed,
+                    speed = if (prefs.rememberSpeed) prefs.lastSpeed else controller.playbackParameters.speed,
+                    resizeMode = if (prefs.rememberAspectRatio) prefs.lastResizeMode else ResizeMode.FIT,
+                    brightness = if (prefs.rememberBrightness) prefs.lastBrightness else 0.5f,
                     repeatMode = repeatModeOf(controller.repeatMode),
                     shuffle = controller.shuffleModeEnabled,
                 )
@@ -136,12 +147,30 @@ class PlayerViewModel @Inject constructor(
                 .orEmpty()
 
             val startIndex = queue.indexOfFirst { it.key == item.key }
+            // The resume setting decides whether a saved position is used: "always"
+            // seeks straight to it, "never" starts over, and "ask" leaves the choice
+            // to the Resume button, so playback begins at the top.
+            val saved = savedPosition(itemKey)
+            val resume = when (prefs.resumeMode) {
+                ResumeMode.ALWAYS -> true
+                ResumeMode.NEVER -> false
+                ResumeMode.ASK -> false
+            }
+            _state.update { it.copy(savedPositionMillis = saved, prefs = prefs) }
+            // "Remember speed" carries the last speed into this item; otherwise the
+            // controller's own default stands.
+            if (prefs.rememberSpeed) controller.setPlaybackSpeed(prefs.lastSpeed)
             val playingQueue: List<MediaItem>
             when {
                 queue.isNotEmpty() && startIndex >= 0 -> {
                     playingFromFolder = false
                     playingQueue = queue
-                    playbackController.playQueue(queue, startIndex) { library.sidecarsFor(it) }
+                    playbackController.playQueue(
+                        queue,
+                        startIndex,
+                        sidecars = { library.sidecarsFor(it) },
+                        resume = resume,
+                    )
                 }
                 else -> {
                     // Opened on its own: play the rest of its folder on from it, so the
@@ -153,9 +182,15 @@ class PlayerViewModel @Inject constructor(
                         playbackController.playQueue(
                             folderQueue,
                             queueIndexOf(folderQueue, item.key),
-                        ) { library.sidecarsFor(it) }
+                            sidecars = { library.sidecarsFor(it) },
+                            resume = resume,
+                        )
                     } else {
-                        playbackController.play(item, sidecars = library.sidecarsFor(item))
+                        playbackController.play(
+                            item,
+                            sidecars = library.sidecarsFor(item),
+                            resume = resume,
+                        )
                     }
                 }
             }
@@ -174,12 +209,36 @@ class PlayerViewModel @Inject constructor(
         }
     }
 
+    /** The saved position of [itemKey], or 0 when there is none. */
+    suspend fun savedPosition(itemKey: String): Long = playbackController.savedPosition(itemKey)
+
+    /** Seeks to the position saved for the item playing now. */
+    fun resumeSavedPosition() {
+        val saved = _state.value.savedPositionMillis
+        if (saved > 0) seekTo(saved)
+    }
+
     /** Re-reads the audio tracks of the current item, e.g. after the queue advanced. */
     private fun refreshAudioTracks() {
         val tracks = playbackController.audioTracks()
         if (tracks != _state.value.audioTracks) {
             _state.update { it.copy(audioTracks = tracks) }
+            applyPreferredAudioTrack(tracks)
         }
+    }
+
+    /**
+     * Switches to the track matching the preferred audio language, once per item, and
+     * only when the container offers one. Without a preference, or with no match, the
+     * file's own default track stays.
+     */
+    private fun applyPreferredAudioTrack(tracks: List<AudioTrack>) {
+        val preferred = _state.value.prefs.preferredAudioLanguage ?: return
+        if (tracks.size < 2) return
+        if (tracks.any { it.selected && it.language?.startsWith(preferred) == true }) return
+        val match = tracks.firstOrNull { it.language?.startsWith(preferred) == true } ?: return
+        if (match.selected) return
+        playbackController.selectAudioTrack(match)
     }
 
     /** Plays [track] instead of the audio track playing now. */
@@ -257,9 +316,14 @@ class PlayerViewModel @Inject constructor(
         val tracks = playbackController.subtitleTracks()
         val active = playbackController.selectedSubtitleTrack()
         // A single sidecar is the common case, so it is shown without a tap — unless
-        // the viewer has just turned subtitles off on purpose.
-        val auto = if (active == null && !subtitlesUserDisabled) {
-            tracks.singleOrNull { it.isExternal }
+        // the viewer has just turned subtitles off on purpose, or has turned the
+        // "show subtitles by default" setting off.
+        val auto = if (active == null && !subtitlesUserDisabled && _state.value.prefs.showSubtitlesByDefault) {
+            val preferred = _state.value.prefs.preferredSubtitleLanguage
+            val matching = preferred?.let { tag ->
+                tracks.firstOrNull { it.language?.startsWith(tag) == true }
+            }
+            matching ?: tracks.singleOrNull { it.isExternal }
         } else {
             null
         }
@@ -299,14 +363,28 @@ class PlayerViewModel @Inject constructor(
     }
 
     fun onLeave(itemKey: String) {
+        // "Remember background play" keeps the audio going once the player screen
+        // closes; the media service owns the player, so it survives this screen. The
+        // position is still saved, so coming back resumes where the sound is.
+        if (_state.value.prefs.rememberBackgroundPlay && player?.isPlaying == true) {
+            playbackController.savePosition(itemKey)
+            cancelPlayerJobs()
+            _state.update { it.copy(player = null, controller = null) }
+            return
+        }
         playbackController.stop(itemKey)
+        cancelPlayerJobs()
+        playbackController.release()
+    }
+
+    /** Stops the polling jobs the player screen started. */
+    private fun cancelPlayerJobs() {
         abLoopJob?.cancel()
         sleepJob?.cancel()
         equalizerJob?.cancel()
         subtitleJob?.cancel()
         transportJob?.cancel()
         lyricsJob?.cancel()
-        playbackController.release()
     }
 
     // --- Equalizer ---------------------------------------------------------
@@ -367,9 +445,14 @@ class PlayerViewModel @Inject constructor(
         val p = player ?: return
         p.setPlaybackSpeed(speed)
         _state.update { it.copy(speed = speed) }
+        viewModelScope.launch { playbackSettings.rememberSpeed(speed) }
     }
 
-    fun cycleResizeMode() = _state.update { it.copy(resizeMode = it.resizeMode.next()) }
+    fun cycleResizeMode() {
+        val next = _state.value.resizeMode.next()
+        _state.update { it.copy(resizeMode = next) }
+        viewModelScope.launch { playbackSettings.rememberResizeMode(next) }
+    }
 
     fun cycleRepeatMode() {
         val p = player ?: return
@@ -415,8 +498,11 @@ class PlayerViewModel @Inject constructor(
     // --- Gesture-driven adjustments ---------------------------------------
 
     /** Applies a brightness delta from a vertical gesture, clamped to 0..1. */
-    fun adjustBrightness(delta: Float) =
-        _state.update { it.copy(brightness = (it.brightness + delta).coerceIn(0f, 1f)) }
+    fun adjustBrightness(delta: Float) {
+        val next = (_state.value.brightness + delta).coerceIn(0f, 1f)
+        _state.update { it.copy(brightness = next) }
+        viewModelScope.launch { playbackSettings.rememberBrightness(next) }
+    }
 
     /** Applies a volume delta to the player, clamped to 0..1. */
     fun adjustVolume(delta: Float) {
