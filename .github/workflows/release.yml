@@ -76,8 +76,11 @@ jobs:
           # apksigner mixes warnings into stderr, so merge the streams. Take the
           # pipeline's real status, not sed's, or a failed verify looks like success.
           set -o pipefail
-          SIGNER=$("$APKSIGNER" verify --print-certs "$APK" 2>&1 \
-            | sed -n 's/^Signer #1 certificate DN: //p')
+          RAW=$("$APKSIGNER" verify --print-certs "$APK" 2>&1) || true
+          echo "--- apksigner output ---"
+          echo "$RAW"
+          echo "------------------------"
+          SIGNER=$(printf '%s\n' "$RAW" | sed -n 's/^Signer #1 certificate DN: //p')
           echo "Signed by: ${SIGNER:-<could not read>}"
           if [ -n "${KEYSTORE_BASE64:-}" ]; then
             # Fail closed: an unreadable signer must not pass as a good one.
