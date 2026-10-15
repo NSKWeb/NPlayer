@@ -98,7 +98,7 @@ you want it.
 | --- | --- |
 | **Fullscreen playback** | The status and navigation bars are now hidden while the player is open, and the video fills the whole screen instead of sitting inside the system bar insets. The bars come back when you leave the player. |
 | **No more background playback** | Closing NPlayer from the recents list now stops playback and removes the notification, instead of carrying on in the background until you force stop it. |
-| **The APK is padded to 7 MB** | The release APK is padded to exactly 7 MB on purpose, by a placeholder asset under `assets/release/`. Code minification and resource shrinking stay on, so nothing functional is stripped; the padding only affects the download size. Regenerate it with `tools/pad_asset.py`. |
+| **The APK is padded to about 7 MB** | The release APK is padded to a round ~7 MB on purpose, by a placeholder asset under `assets/release/`. Code minification and resource shrinking stay on, so nothing functional is stripped; the padding only affects the download size. Regenerate it with `tools/pad_asset.py`. |
 
 ## What's new in 1.1.2
 
