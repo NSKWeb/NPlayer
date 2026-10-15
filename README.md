@@ -266,11 +266,12 @@ one; there is no separate audio file to load.
 
 ### Install as fast as possible
 
-The install spends most of its time in Play Protect, not in the download. The release
-APK is signed with a **debug key**, so Play Protect has never seen the signature, cannot
-use its "already known safe" shortcut, and runs a full verification pass — that is the
-couple of minutes of *Scanning…* before the Install button appears. The 7 MB padding
-adds to the file it has to read, but the signature is the main cost.
+The install spends most of its time in Play Protect, not in the download. The APK is
+signed, so Play Protect checks the signature against its reputation database before it
+will install. A signature it has never seen cannot use the "already known safe"
+shortcut, so it falls back to a full verification pass — that is the couple of minutes
+of *Scanning…* before the Install button appears. The 7 MB padding adds to the file it
+has to read, but the signature check is the main cost.
 
 Fastest first:
 
@@ -298,10 +299,15 @@ first install. You can shorten it:
    quick, because the signature is already known on that device. Uninstalling throws
    that away and makes the next install slow again.
 
-The lasting fix is a **release keystore**: with a real signature instead of the shared
-debug key, the first install is still scanned but the build accumulates reputation, so
-installs and updates get faster from then on. See [Publishing to the Play
-Store](#publishing-to-the-play-store) for how to set one up.
+The lasting fix is the **release keystore**, which is now set up — see
+[Signing](#signing). A dedicated key accumulates reputation, so installs and updates get
+faster than they were with the shared debug key. The first install of a newly signed
+build is still scanned, because the signature is new.
+
+> [!NOTE]
+> **Releases up to `v1.2.0` were signed with the debug key.** The first release-signed
+> build cannot install over one of those — uninstall the old copy first. See
+> [Signing](#signing).
 
 ### On your phone
 
@@ -323,13 +329,13 @@ at the newest release asset, so the code never goes stale.
    only setup step there is.
 
 > [!NOTE]
-> **Why Play Protect warns, and why the scan takes minutes.** Releases are signed with
-> a debug key, not a published release key, so Play Protect has never seen the signature
-> before. The warning is about *provenance*, not a detected threat. The same unknown
-> signature is why the install sits on *Scanning…* for a couple of minutes — see
-> [Install as fast as possible](#install-as-fast-as-possible) for how to avoid the wait.
-> If you would rather verify the build yourself than trust the binary,
-> [build it from source](#build) instead — you get an APK you compiled.
+> **Why Play Protect warns, and why the scan takes minutes.** Play Protect checks the
+> APK's signature against its reputation database. A build it has not seen before gets a
+> full verification pass rather than the known-safe shortcut, which is why the install
+> sits on *Scanning…* for a couple of minutes. The warning is about *provenance*, not a
+> detected threat — see [Install as fast as possible](#install-as-fast-as-possible) for
+> how to avoid the wait. If you would rather verify the build yourself than trust the
+> binary, [build it from source](#build) instead — you get an APK you compiled.
 
 ### If the install is blocked
 
@@ -668,6 +674,56 @@ Because releases are versioned, users can also browse older builds under
 | **F-Droid** | Open-source Android catalogue | Requires fully reproducible builds and a public signing setup |
 | **Self-hosted / S3 / Cloudflare R2** | Private or internal distribution | You own the bandwidth, TLS, and uptime |
 
+## Signing
+
+The release build is signed with a **release keystore**, not the debug key. That is what
+lets Play Protect build reputation for the app instead of re-scanning an unknown
+signature on every install.
+
+> [!IMPORTANT]
+> **The signing key is permanent.** Android identifies an app by its signature, so every
+> future update must be signed with the same key. Losing it means you can no longer update
+> an installed copy — users would have to uninstall and reinstall. Back up
+> `NPlayer/release.keystore` and its passwords somewhere you will still have them in five
+> years (a password manager plus an offline copy).
+
+> [!WARNING]
+> **Switching signatures needs a reinstall.** `v1.2.0` and earlier were signed with the
+> debug key. A release-signed build cannot install over a debug-signed one — Android
+> rejects it with *"App not installed"*. Uninstall the old copy first. From the first
+> release-signed build onward, updates work normally.
+
+### The keystore and where its secrets live
+
+| Item | Location |
+|---|---|
+| Keystore | `NPlayer/release.keystore` — git-ignored, never committed |
+| Local passwords | `NPlayer/keystore.properties` — git-ignored |
+| CI passwords | Repository secrets `KEYSTORE_BASE64`, `KEYSTORE_PASSWORD`, `KEY_ALIAS`, `KEY_PASSWORD` |
+
+`app/build.gradle.kts` reads `keystore.properties` from the project root and signs the
+release build with it. With no such file it falls back to the debug key, so a fresh clone
+still builds and installs — just debug-signed.
+
+The release workflow decodes `KEYSTORE_BASE64` into a keystore, writes
+`keystore.properties` from the other three secrets, then **verifies the built APK is not
+debug-signed** and fails the job if it is. So a release can never quietly ship with the
+wrong key.
+
+To rotate the keystore, generate a new one and update all four secrets:
+
+```bash
+cd NPlayer
+keytool -genkeypair -v -keystore release.keystore -alias nplayer \
+  -keyalg RSA -keysize 4096 -validity 10000 -storetype PKCS12
+base64 -w0 release.keystore | gh secret set KEYSTORE_BASE64
+```
+
+> [!NOTE]
+> **Rotating the key is not a normal update.** A new key means a new app identity, so
+> every installed user has to uninstall before they can install the new build. Keep the
+> current key unless it is actually compromised.
+
 ## Publishing to the Play Store
 
 This is the full path from this repo to a live listing. It is deliberately step by step:
@@ -675,33 +731,25 @@ each step produces something you can check before moving on.
 
 ### 1. Create a release keystore
 
-Play will not accept a debug-signed build, and you must keep this key for the life of
-the app — every future update has to be signed with the same one.
-
-```bash
-keytool -genkeypair -v \
-  -keystore nplayer-release.jks \
-  -alias nplayer \
-  -keyalg RSA -keysize 4096 -validity 10000
-```
-
-Answer the prompts, then keep `nplayer-release.jks` and its passwords somewhere safe
-(a password manager plus an offline backup). If you lose it you cannot update the app.
+Already done — see [Signing](#signing). Play will not accept a debug-signed build, and
+you must keep this key for the life of the app; every future update has to be signed with
+the same one.
 
 ### 2. Point the build at the keystore
 
-Create `NPlayer/keystore.properties` — it is git-ignored, so the secrets stay local:
+Already done. `NPlayer/keystore.properties` is git-ignored, so the secrets stay local:
 
 ```properties
-storeFile=/absolute/path/to/nplayer-release.jks
+storeFile=release.keystore
 storePassword=…
 keyAlias=nplayer
 keyPassword=…
 ```
 
-`app/build.gradle.kts` already reads this file and switches the release build to a real
-signature when it is present; with no file it falls back to the debug key, which is what
-makes the GitHub release installable.
+`storeFile` is resolved against the **project root**, next to `keystore.properties`.
+
+`app/build.gradle.kts` reads this file and switches the release build to a real
+signature when it is present; with no file it falls back to the debug key.
 
 ### 3. Build an Android App Bundle
 
@@ -804,9 +852,9 @@ keyAlias=…
 keyPassword=…
 ```
 
-When the file is absent the release build is signed with the debug key — that is what
-keeps the GitHub release installable with no setup. Add the file (and never commit it)
-when you want a real signature, for Play or for a signed direct download.
+When the file is present the release build is signed with the release keystore. Without
+it the build falls back to the debug key, so a fresh clone still compiles and installs
+without any secret setup — see [Signing](#signing).
 
 ### Keep the APK out of git
 

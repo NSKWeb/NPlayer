@@ -50,9 +50,46 @@ and regenerate the QR.
 CI (`.github/workflows/android.yml`) runs `testDebugUnitTest` then `assembleDebug` on
 every push and pull request. `release.yml` builds `:app:assembleRelease` and publishes
 that minified APK as a release asset on a `v*` tag — the published download is the
-release build, not debug, because it is several times smaller and faster. Release
-signing falls back to the debug key when `keystore.properties` is absent, so the asset
-is installable without a keystore.
+release build, not debug, because it is several times smaller and faster.
+
+### Signing
+
+`app/build.gradle.kts` reads `keystore.properties` from the **project root** and signs
+the release build with the release keystore when it is present, falling back to the
+debug key otherwise so a fresh clone still builds and installs.
+
+`storeFile` must resolve via `rootProject.file(...)`, not `file(...)`. The properties
+file lives at `NPlayer/keystore.properties` while the module is `NPlayer/app`, so a bare
+`file()` resolves inside `app/` and `validateSigningRelease` fails with *keystore file
+not found*. This was a real bug: the config looked correct but never worked.
+
+`release.keystore` and `keystore.properties` are git-ignored. CI supplies the same key
+through repository secrets (`KEYSTORE_BASE64`, `KEYSTORE_PASSWORD`, `KEY_ALIAS`,
+`KEY_PASSWORD`); `release.yml` decodes it, writes the properties file, and then
+**fails the job if the built APK is debug-signed**, so a release cannot silently ship
+with the wrong key.
+
+The signature is the app's identity: an APK signed with one key cannot update an install
+of another. Releases up to `v1.2.0` used the debug key, so the first release-signed
+build needs an uninstall before it will install.
+
+### Release APK size
+
+The release APK carries a padding asset, `app/src/main/assets/release/placeholder.bin`.
+It is not there to hit an exact byte count — the padding is left at its committed size
+and the APK lands wherever it lands (about 7.05 MB). Do not tune it to a round number.
+
+The asset holds high-entropy bytes, so it deflates to roughly 76% of its raw length
+rather than compressing away, which is what makes it a usable size knob. It is *not*
+incompressible — the earlier claim that it "barely compresses" was wrong. Minification
+and resource shrinking stay on, so nothing functional is stripped.
+
+`tools/pad_asset.py` regenerates the asset. To retune after a size drift, add the signed
+difference (built APK size minus `PAD_TARGET`) to `PAD_TARGET` and rebuild. The last byte
+is not reachable exactly because DEFLATE compression is not linear.
+
+If you would rather not carry the padding, delete the asset, `tools/pad_asset.py`, and
+this section; the release build is otherwise unchanged.
 
 ### Player controls
 

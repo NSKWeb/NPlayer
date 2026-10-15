@@ -30,7 +30,8 @@ android {
     signingConfigs {
         if (keystoreProperties.isNotEmpty()) {
             create("release") {
-                storeFile = file(keystoreProperties.getProperty("storeFile"))
+                // Resolved against the project root, next to keystore.properties.
+                storeFile = rootProject.file(keystoreProperties.getProperty("storeFile"))
                 storePassword = keystoreProperties.getProperty("storePassword")
                 keyAlias = keystoreProperties.getProperty("keyAlias")
                 keyPassword = keystoreProperties.getProperty("keyPassword")
@@ -39,12 +40,11 @@ android {
     }
 
     /**
-     * The published APK is the release build. Minification and resource shrinking are
-     * deliberately left off: the app is a personal one, and a larger APK is preferred
-     * over the risk of R8 stripping something the reflection-based paths need. Without
-     * a real keystore it is signed with the debug key so it stays installable and can
-     * update earlier debug installs in place; supply keystore.properties for a proper
-     * release signature.
+     * The published APK is the release build, minified and resource-shrunk. It is signed
+     * with the release keystore when keystore.properties is present, and falls back to the
+     * debug key otherwise so a local build stays installable. The two signatures are not
+     * interchangeable: an APK signed with one cannot update an install of the other, so
+     * switching requires an uninstall first.
      */
     val releaseSigning = signingConfigs.findByName("release") ?: signingConfigs.getByName("debug")
 
