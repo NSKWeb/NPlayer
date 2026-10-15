@@ -16,6 +16,18 @@ data class SubtitleFile(
     val folder: String = "",
 )
 
+/**
+ * A lyrics file found on the device, matched to audio by file name. [uri] is the
+ * `content://` MediaStore location the text is read from. Kept here beside
+ * [SubtitleFile] because both are sidecars found by the same scan.
+ */
+data class LyricsFile(
+    val name: String,
+    val uri: Uri,
+    /** Containing folder relative to storage, matching [MediaItem.folder]. */
+    val folder: String = "",
+)
+
 /** Formats a duration as "1h 2m" or "5m"; null when the duration is unknown. */
 internal fun formatDuration(millis: Long): String? {
     if (millis <= 0) return null

@@ -5,10 +5,14 @@ import androidx.lifecycle.viewModelScope
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.session.MediaController
+import com.example.nplayer.data.lyrics.Lyrics
+import com.example.nplayer.data.lyrics.LyricsRepository
+import com.example.nplayer.data.lyrics.activeLyricIndex
 import com.example.nplayer.data.media.MediaLibrary
 import com.example.nplayer.data.media.MediaItem
 import com.example.nplayer.data.playlists.PlaylistStore
 import com.example.nplayer.playback.AbRepeat
+import com.example.nplayer.playback.AudioTrack
 import com.example.nplayer.playback.EqualizerController
 import com.example.nplayer.playback.EqualizerState
 import com.example.nplayer.playback.PlaybackController
@@ -59,6 +63,12 @@ data class PlayerUiState(
     val activeSubtitle: SubtitleTrack? = null,
     /** The caption line to draw over the video, already stripped of styling tags. */
     val subtitleText: String? = null,
+    /** Timed lyrics for the audio track, when a matching sidecar was found. */
+    val lyrics: Lyrics = Lyrics(),
+    /** Index into [lyrics] lines for the position playing now, or -1 before the first. */
+    val activeLyric: Int = -1,
+    /** Every audio track in the current item, so one can be chosen over another. */
+    val audioTracks: List<AudioTrack> = emptyList(),
 )
 
 @UnstableApi
@@ -68,6 +78,7 @@ class PlayerViewModel @Inject constructor(
     private val playbackController: PlaybackController,
     private val playlistStore: PlaylistStore,
     private val equalizerController: EqualizerController,
+    private val lyricsRepository: LyricsRepository,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(PlayerUiState())
@@ -81,6 +92,7 @@ class PlayerViewModel @Inject constructor(
     private var equalizerJob: Job? = null
     private var subtitleJob: Job? = null
     private var transportJob: Job? = null
+    private var lyricsJob: Job? = null
 
     /** Set when the viewer turns subtitles off, so auto-select does not turn them back on. */
     private var subtitlesUserDisabled = false
@@ -157,6 +169,50 @@ class PlayerViewModel @Inject constructor(
             refreshSubtitles()
             mirrorSubtitles()
             mirrorTransport()
+            loadLyrics(item)
+            refreshAudioTracks()
+        }
+    }
+
+    /** Re-reads the audio tracks of the current item, e.g. after the queue advanced. */
+    private fun refreshAudioTracks() {
+        val tracks = playbackController.audioTracks()
+        if (tracks != _state.value.audioTracks) {
+            _state.update { it.copy(audioTracks = tracks) }
+        }
+    }
+
+    /** Plays [track] instead of the audio track playing now. */
+    fun selectAudioTrack(track: AudioTrack) {
+        playbackController.selectAudioTrack(track)
+        // The override takes effect on the next poll; read it back so the tick moves.
+        viewModelScope.launch {
+            delay(150)
+            refreshAudioTracks()
+        }
+    }
+
+    /**
+     * Loads the timed lyrics sidecar for [item] and tracks the line playing now. Only
+     * audio carries lyrics, and a missing file simply leaves the lyrics empty.
+     */
+    private fun loadLyrics(item: MediaItem) {
+        lyricsJob?.cancel()
+        lyricsJob = viewModelScope.launch {
+            val file = library.lyricsFor(item)
+            val lyrics = file?.let { lyricsRepository.load(it.uri) } ?: Lyrics()
+            _state.update { it.copy(lyrics = lyrics, activeLyric = -1) }
+            if (lyrics.isEmpty) return@launch
+            while (isActive) {
+                val p = player
+                if (p != null) {
+                    val index = activeLyricIndex(lyrics.lines, p.currentPosition)
+                    if (index != _state.value.activeLyric) {
+                        _state.update { it.copy(activeLyric = index) }
+                    }
+                }
+                delay(250)
+            }
         }
     }
 
@@ -229,6 +285,7 @@ class PlayerViewModel @Inject constructor(
                 // without the count changing, so the ids are compared, not the size.
                 val ids = playbackController.subtitleTracks().map { it.id }
                 if (ids != _state.value.subtitleTracks.map { it.id }) refreshSubtitles()
+                refreshAudioTracks()
                 delay(400)
             }
         }
@@ -242,12 +299,13 @@ class PlayerViewModel @Inject constructor(
     }
 
     fun onLeave(itemKey: String) {
-        viewModelScope.launch { playbackController.stop(itemKey) }
+        playbackController.stop(itemKey)
         abLoopJob?.cancel()
         sleepJob?.cancel()
         equalizerJob?.cancel()
         subtitleJob?.cancel()
         transportJob?.cancel()
+        lyricsJob?.cancel()
         playbackController.release()
     }
 

@@ -1,5 +1,6 @@
 package com.example.nplayer.data.media
 
+import com.example.nplayer.data.lyrics.pickLyricsFile
 import com.example.nplayer.data.prefs.AppSettingsStore
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -54,6 +55,7 @@ class MediaLibrary @Inject constructor(
         try {
             _items.value = repository.scan()
             _subtitleFiles.value = repository.scanSubtitles()
+            _lyricsFiles.value = repository.scanLyrics()
         } finally {
             _isScanning.value = false
         }
@@ -61,6 +63,22 @@ class MediaLibrary @Inject constructor(
 
     /** Subtitle files on the device, keyed by lower-case file name. */
     private val _subtitleFiles = MutableStateFlow<Map<String, SubtitleFile>>(emptyMap())
+
+    /** Lyrics files on the device, keyed by lower-case file name. */
+    private val _lyricsFiles = MutableStateFlow<Map<String, LyricsFile>>(emptyMap())
+
+    /**
+     * The lyrics file for [item], or null. Unlike subtitles a track has at most one
+     * lyric file shown, so the best name match is picked rather than the whole set.
+     */
+    fun lyricsFor(item: MediaItem): LyricsFile? {
+        val folder = normalizeFolder(item.folder)
+        val candidates = _lyricsFiles.value.values
+            .filter { normalizeFolder(it.folder) == folder }
+            .map { it.name }
+        val name = pickLyricsFile(item.displayName, candidates) ?: return null
+        return _lyricsFiles.value[name.lowercase()]
+    }
 
     /**
      * Sidecar subtitle files sitting in [item]'s folder whose name matches the media

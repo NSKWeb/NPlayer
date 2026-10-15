@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
@@ -51,6 +52,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.media3.common.util.UnstableApi
+import com.example.nplayer.data.lyrics.Lyrics
 import com.example.nplayer.data.media.MediaItem
 import com.example.nplayer.playback.SPEED_PRESETS
 import com.example.nplayer.playback.SLEEP_TIMER_PRESETS
@@ -244,6 +246,8 @@ internal fun AudioPlayerScreen(
 
         Spacer(Modifier.height(8.dp))
 
+        LyricsPane(lyrics = state.lyrics, activeIndex = state.activeLyric)
+
         UpNextList(queue = state.queue, current = item)
 
         Spacer(Modifier.height(12.dp))
@@ -282,6 +286,55 @@ internal fun AudioPlayerScreen(
             },
             onDismiss = { showSleepSheet = false },
         )
+    }
+}
+
+/**
+ * The timed lyrics for the current track. The line playing now is highlighted and the
+ * pane scrolls to keep it in view; lines already sung are dimmed. Rendered as a plain
+ * column because it lives inside the screen's scrollable column, and it disappears
+ * entirely when the track has no lyrics sidecar.
+ */
+@Composable
+private fun LyricsPane(lyrics: Lyrics, activeIndex: Int) {
+    if (lyrics.isEmpty) return
+
+    val scrollState = rememberScrollState()
+    // Keep the active line centred-ish by scrolling it into view as it advances.
+    LaunchedEffect(activeIndex) {
+        if (activeIndex >= 0) {
+            val fraction = activeIndex.toFloat() / lyrics.lines.size
+            scrollState.animateScrollTo((scrollState.maxValue * fraction).toInt())
+        }
+    }
+
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Text(
+            "Lyrics",
+            style = MaterialTheme.typography.titleSmall,
+            modifier = Modifier.padding(vertical = 4.dp),
+        )
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(max = 220.dp)
+                .verticalScroll(scrollState),
+        ) {
+            lyrics.lines.forEachIndexed { index, line ->
+                val isActive = index == activeIndex
+                Text(
+                    text = line.text.ifBlank { "♪" },
+                    style = if (isActive) MaterialTheme.typography.titleMedium else MaterialTheme.typography.bodyMedium,
+                    fontWeight = if (isActive) FontWeight.SemiBold else FontWeight.Normal,
+                    color = when {
+                        isActive -> MaterialTheme.colorScheme.primary
+                        index < activeIndex -> MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                        else -> MaterialTheme.colorScheme.onSurfaceVariant
+                    },
+                    modifier = Modifier.padding(vertical = 3.dp),
+                )
+            }
+        }
     }
 }
 

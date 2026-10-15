@@ -34,6 +34,16 @@ files are there.
 
 </div>
 
+## What's new in 1.1.7
+
+1.1.7 fixes resume and adds lyrics and audio-track selection.
+
+| Change | What it means |
+| --- | --- |
+| **Resume works again** | Playback went through the folder queue, which always started at 0, so a saved position was ignored. Leaving the player also raced the release and could save 0 over the position it was trying to keep. Both are fixed, so an item resumes where you left it. |
+| **Lyrics** | A `.lrc` file next to a track is found and shown on the audio player, with the line playing now highlighted and the pane scrolling to follow it. Nothing is downloaded; it reads the file already on the device. |
+| **Audio track selection** | A file with more than one audio track (a dual-language film, say) gets an **Audio** button in the player controls to choose which one plays. |
+
 ## What's new in 1.1.6
 
 1.1.6 makes subtitles readable over the video.
@@ -174,6 +184,7 @@ below is local playback control, no network involved.
 | **Picture-in-picture** | Shrinks the video into a floating window that keeps playing over other apps. |
 | **Equalizer** | Device presets and per-band sliders, bound to the player's audio session. |
 | **Subtitles** | Lists the subtitle files sitting next to the item and any text track inside it, shows the one you pick, and turns subtitles off again. |
+| **Audio track** | Lists the audio tracks inside the file so a multi-language item can play the one you want. |
 
 ### Subtitles
 
@@ -196,6 +207,21 @@ MicroDVD, which the extractor cannot parse.
 
 Still open: a subtitle *downloader* (it would need `INTERNET`) and true all-format
 decoding (RMVB/WMV/DivX would need FFmpeg).
+
+### Lyrics
+
+A `.lrc` file next to a track is read and shown on the audio player, with the line
+playing now highlighted and the pane scrolling to follow it. The sidecar is found the
+same way a subtitle is — `Song.lrc` belongs to `Song.mp3`, and `Song.en.lrc` matches
+too — and it is read from the device, so nothing is downloaded. `LrcParser` and
+`LyricsFiles` are pure and unit-tested.
+
+### Audio tracks
+
+A file with several audio tracks — a dual-language film, or a commentary track — gets
+an **Audio** button in the player controls that lists them and switches which one
+plays. The tracks come from the container, so a file with one track still lists that
+one; there is no separate audio file to load.
 
 ## Install
 
@@ -443,7 +469,8 @@ device.
 `PlaybackPositionStore` keeps a per-item position in DataStore (`nplayer_positions`).
 `PlaybackController` restores it as the start position when you press Play, and a loop
 saves the current position every five seconds while playing. Leaving the player cancels
-the loop and saves once more.
+the loop and saves once more. The position is read before the controller is released,
+so the final save cannot race the teardown and record 0.
 
 There is no server to report progress to, so the position never leaves the phone. The
 Detail screen surfaces it as a **Resume** button when a saved position exists.

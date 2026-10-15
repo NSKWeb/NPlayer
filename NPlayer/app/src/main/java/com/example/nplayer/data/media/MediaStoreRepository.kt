@@ -4,6 +4,7 @@ import android.content.ContentUris
 import android.content.Context
 import android.os.Build
 import android.provider.MediaStore
+import com.example.nplayer.data.lyrics.isLyricsExtension
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -31,6 +32,34 @@ class MediaStoreRepository @Inject constructor(
      * the media read already granted.
      */
     suspend fun scanSubtitles(): Map<String, SubtitleFile> = withContext(Dispatchers.IO) {
+        scanSidecars { name, uri, folder ->
+            SubtitleFile(name = name, uri = uri, folder = folder)
+        }.let { files ->
+            files.associateBy { it.name.lowercase() }
+        }
+    }
+
+    /**
+     * Lyrics files on the device, keyed by lower-case file name, matched to audio by
+     * name at playback time. Read through the same `MediaStore.Files` query as the
+     * subtitles, so no extra permission is needed.
+     */
+    suspend fun scanLyrics(): Map<String, LyricsFile> = withContext(Dispatchers.IO) {
+        scanSidecars { name, uri, folder ->
+            LyricsFile(name = name, uri = uri, folder = folder)
+        }.let { files ->
+            files.associateBy { it.name.lowercase() }
+        }
+    }
+
+    /**
+     * Reads every subtitle and lyrics file on the device in one pass. [map] turns a
+     * matching row into whichever sidecar type is wanted; non-matching extensions are
+     * skipped before it is called.
+     */
+    private fun <T> scanSidecars(
+        map: (name: String, uri: android.net.Uri, folder: String) -> T,
+    ): List<T> {
         val collection = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             MediaStore.Files.getContentUri(MediaStore.VOLUME_EXTERNAL)
         } else {
@@ -41,19 +70,16 @@ class MediaStoreRepository @Inject constructor(
             MediaStore.Files.FileColumns.DISPLAY_NAME,
         ) + folderColumns
 
-        val results = mutableMapOf<String, SubtitleFile>()
+        val results = mutableListOf<T>()
         runQuery(collection, projection) { cursor ->
             val id = cursor.getLongOrNull(0) ?: return@runQuery
             val name = cursor.getStringOrNull(1) ?: return@runQuery
-            if (isSubtitleExtension(name.substringAfterLast('.', ""))) {
-                results[name.lowercase()] = SubtitleFile(
-                    name = name,
-                    uri = ContentUris.withAppendedId(collection, id),
-                    folder = cursor.folderOrRoot(2),
-                )
+            val extension = name.substringAfterLast('.', "")
+            if (isSubtitleExtension(extension) || isLyricsExtension(extension)) {
+                results += map(name, ContentUris.withAppendedId(collection, id), cursor.folderOrRoot(2))
             }
         }
-        results
+        return results
     }
 
     /**

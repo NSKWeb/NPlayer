@@ -40,6 +40,7 @@ import androidx.compose.material.icons.filled.Flip
 import androidx.compose.material.icons.filled.Forward10
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.LockOpen
+import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PictureInPictureAlt
 import androidx.compose.material.icons.filled.PlayArrow
@@ -97,6 +98,7 @@ import com.example.nplayer.playback.formatSpeed
 import kotlinx.coroutines.delay
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.ui.text.style.TextAlign
+import com.example.nplayer.playback.AudioTrack
 import com.example.nplayer.playback.SubtitleTrack
 
 @UnstableApi
@@ -165,6 +167,7 @@ private fun VideoPlayerScreen(
     var showEqualizer by remember { mutableStateOf(false) }
     var showSleepSheet by remember { mutableStateOf(false) }
     var showSubtitleSheet by remember { mutableStateOf(false) }
+    var showAudioSheet by remember { mutableStateOf(false) }
 
     val subtitlePicker = rememberLauncherForActivityResult(
         ActivityResultContracts.OpenDocument(),
@@ -418,8 +421,18 @@ private fun VideoPlayerScreen(
                     onSubtitles = { showSubtitleSheet = true },
                     subtitleActive = state.activeSubtitle != null,
                     subtitleCount = state.subtitleTracks.size,
+                    onAudioTracks = { showAudioSheet = true },
+                    audioTrackCount = state.audioTracks.size,
                 )
             }
+        }
+
+        if (showAudioSheet) {
+            AudioTrackSheet(
+                tracks = state.audioTracks,
+                onPick = { viewModel.selectAudioTrack(it); showAudioSheet = false },
+                onDismiss = { showAudioSheet = false },
+            )
         }
 
         if (showSubtitleSheet) {
@@ -502,6 +515,8 @@ private fun ControlsOverlay(
     onSubtitles: () -> Unit,
     subtitleActive: Boolean,
     subtitleCount: Int,
+    onAudioTracks: () -> Unit,
+    audioTrackCount: Int,
 ) {
     val playing = state.controller?.isPlaying == true
     val shown = if (scrubbing) scrubPosition.toLong() else position
@@ -647,6 +662,12 @@ private fun ControlsOverlay(
                 onSubtitles,
                 active = subtitleActive,
             )
+            OverlayButton(
+                Icons.Filled.MusicNote,
+                if (audioTrackCount > 1) "Audio ($audioTrackCount)" else "Audio",
+                onAudioTracks,
+                active = audioTrackCount > 1,
+            )
         }
     }
 }
@@ -732,6 +753,52 @@ internal fun EqualizerDialog(
                                     )
                                 },
                             )
+                        }
+                    }
+                }
+            }
+        },
+        confirmButton = { TextButton(onClick = onDismiss) { Text("Close") } },
+    )
+}
+
+@Composable
+private fun AudioTrackSheet(
+    tracks: List<AudioTrack>,
+    onPick: (AudioTrack) -> Unit,
+    onDismiss: () -> Unit,
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Audio track") },
+        text = {
+            Column(Modifier.fillMaxHeight(0.7f).verticalScroll(rememberScrollState())) {
+                if (tracks.isEmpty()) {
+                    Text(
+                        "The tracks are read once the file has opened. If this stays " +
+                            "empty, the item has no audio track the device can decode.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                } else {
+                    tracks.forEach { track ->
+                        TextButton(onClick = { onPick(track) }, modifier = Modifier.fillMaxWidth()) {
+                            Text(
+                                text = if (track.selected) "✓ ${track.label}" else track.label,
+                                color = if (track.selected) {
+                                    MaterialTheme.colorScheme.primary
+                                } else {
+                                    MaterialTheme.colorScheme.onSurface
+                                },
+                                modifier = Modifier.weight(1f),
+                            )
+                            track.mimeType?.let {
+                                Text(
+                                    it.substringAfter('/'),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
                         }
                     }
                 }

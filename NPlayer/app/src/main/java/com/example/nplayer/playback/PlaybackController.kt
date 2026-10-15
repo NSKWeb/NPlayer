@@ -83,14 +83,19 @@ class PlaybackController @Inject constructor(
         sidecars: (MediaFile) -> List<SubtitleFile> = { emptyList() },
     ) {
         if (items.isEmpty()) return
+        val start = startIndex.coerceIn(items.indices)
+        // The item the viewer opened resumes where they left off; the rest of the queue
+        // starts at the beginning, because a position only belongs to the item it was
+        // saved for.
+        val startPosition = positionStore.position(items[start].key)
         val mediaItems = items.map { mediaItemFor(it, subtitleUri = null, sidecars = sidecars(it)) }
         withContext(Dispatchers.Main) {
             val c = controller ?: return@withContext
-            c.setMediaItems(mediaItems, startIndex.coerceIn(items.indices), 0L)
+            c.setMediaItems(mediaItems, start, startPosition)
             c.prepare()
             c.play()
         }
-        currentKey = items.getOrNull(startIndex)?.key
+        currentKey = items[start].key
         startProgressLoop()
     }
 
@@ -130,6 +135,31 @@ class PlaybackController @Inject constructor(
                     .build(),
             )
             .build()
+    }
+
+    /** The audio track currently playing, or null when there is none. */
+    fun selectedAudioTrack(): AudioTrack? =
+        audioTracks().firstOrNull { it.selected }
+
+    /**
+     * Plays [track] instead of the audio track playing now. Only one audio track is
+     * ever heard, so selecting one clears any other audio override.
+     */
+    fun selectAudioTrack(track: AudioTrack?) {
+        val c = controller ?: return
+        val builder = c.trackSelectionParameters.buildUpon().clearOverridesOfType(C.TRACK_TYPE_AUDIO)
+        if (track != null) {
+            val group = c.currentTracks.groups
+                .firstOrNull { it.type == C.TRACK_TYPE_AUDIO && it.mediaTrackGroup.id == track.id }
+            group?.let { builder.setOverrideForType(TrackSelectionOverride(it.mediaTrackGroup, 0)) }
+        }
+        c.trackSelectionParameters = builder.build()
+    }
+
+    /** The audio tracks muxed into the item that is playing, in container order. */
+    fun audioTracks(): List<AudioTrack> {
+        val c = controller ?: return emptyList()
+        return buildAudioTracks(c.currentTracks)
     }
 
     /**
@@ -252,16 +282,20 @@ class PlaybackController @Inject constructor(
         }
     }
 
-    suspend fun stop(itemKey: String) {
+    /**
+     * Saves where playback had reached and stops tracking. The position is read
+     * synchronously: the caller releases the controller right after, and a coroutine
+     * that read it later would find the controller gone and save 0 — erasing the very
+     * position this is meant to keep.
+     */
+    fun stop(itemKey: String) {
         progressJob?.cancel()
         // In a queue the item playing may have advanced past the one the screen was
-        // opened on, so save the position against whichever item is current.
-        val (key, position) = withContext(Dispatchers.Main) {
-            val current = controller?.currentMediaItem?.mediaId ?: itemKey
-            current to (controller?.currentPosition ?: 0L)
-        }
-        positionStore.save(key, position)
+        // opened on, so save against whichever item is current.
+        val current = controller?.currentMediaItem?.mediaId ?: itemKey
+        val position = controller?.currentPosition ?: 0L
         currentKey = null
+        scope.launch { positionStore.save(current, position) }
     }
 
     fun release() {
