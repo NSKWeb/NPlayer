@@ -264,6 +264,45 @@ one; there is no separate audio file to load.
 | **adb** | From a computer with the phone plugged in: `adb install -r NPlayer.apk` |
 | **Build it** | `cd NPlayer && ./gradlew :app:assembleDebug` — see [Build](#build) |
 
+### Install as fast as possible
+
+The install spends most of its time in Play Protect, not in the download. The release
+APK is signed with a **debug key**, so Play Protect has never seen the signature, cannot
+use its "already known safe" shortcut, and runs a full verification pass — that is the
+couple of minutes of *Scanning…* before the Install button appears. The 7 MB padding
+adds to the file it has to read, but the signature is the main cost.
+
+Fastest first:
+
+| Route | Time | Why |
+|---|---|---|
+| **adb** | seconds | `adb install` bypasses Play Protect entirely. Nothing is scanned, and the install is silent. |
+| **Direct download** | a few minutes | Play Protect scans the APK on the device before it will install it. |
+| **Build it** | slowest | You compile first, *then* still sideload the result through the same scan. |
+
+So the quick fix is **adb**, if you have a computer and a cable:
+
+```bash
+adb install -r NPlayer.apk
+```
+
+If you are installing on the phone with no computer, the scan is unavoidable on the
+first install. You can shorten it:
+
+1. **Turn off Play Protect scanning for the install** — Play Store → your profile →
+   *Play Protect* → gear icon → turn off *Scan apps with Play Protect*. Install, then
+   turn it back on. This is the single biggest saving.
+2. **Skip the download step** by using the [one-tap page](https://nskweb.github.io/NPlayer/),
+   which fetches the newest APK in one tap instead of hunting the release page.
+3. **Install once and let it update in place.** Later installs of the same build are
+   quick, because the signature is already known on that device. Uninstalling throws
+   that away and makes the next install slow again.
+
+The lasting fix is a **release keystore**: with a real signature instead of the shared
+debug key, the first install is still scanned but the build accumulates reputation, so
+installs and updates get faster from then on. See [Publishing to the Play
+Store](#publishing-to-the-play-store) for how to set one up.
+
 ### On your phone
 
 The direct download is the usual path. Scanning the QR opens
@@ -284,11 +323,13 @@ at the newest release asset, so the code never goes stale.
    only setup step there is.
 
 > [!NOTE]
-> **Why Play Protect warns.** Releases are signed with a debug key, not a published
-> release key, so Play Protect has never seen the signature before. The warning is
-> about *provenance*, not a detected threat. If you would rather verify the build
-> yourself than trust the binary, [build it from source](#build) instead — you get an
-> APK you compiled.
+> **Why Play Protect warns, and why the scan takes minutes.** Releases are signed with
+> a debug key, not a published release key, so Play Protect has never seen the signature
+> before. The warning is about *provenance*, not a detected threat. The same unknown
+> signature is why the install sits on *Scanning…* for a couple of minutes — see
+> [Install as fast as possible](#install-as-fast-as-possible) for how to avoid the wait.
+> If you would rather verify the build yourself than trust the binary,
+> [build it from source](#build) instead — you get an APK you compiled.
 
 ### If the install is blocked
 
