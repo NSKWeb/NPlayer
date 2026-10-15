@@ -65,6 +65,8 @@ jobs:
       - name: Verify APK signature
         env:
           KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
         run: |
           set -eu
           APK=app/build/outputs/apk/release/NPlayer.apk
@@ -73,25 +75,41 @@ jobs:
             echo "::error::apksigner not found under $ANDROID_HOME/build-tools"
             exit 1
           fi
-          # apksigner mixes warnings into stderr, so merge the streams. Take the
-          # pipeline's real status, not sed's, or a failed verify looks like success.
           set -o pipefail
-          RAW=$("$APKSIGNER" verify --print-certs "$APK" 2>&1) || true
-          echo "--- apksigner output ---"
+          # apksigner mixes warnings into stderr. A failed verify fails the step.
+          RAW=$("$APKSIGNER" verify --print-certs "$APK" 2>&1)
           echo "$RAW"
-          echo "------------------------"
-          SIGNER=$(printf '%s\n' "$RAW" | sed -n 's/^Signer #1 certificate DN: //p')
+          # The prefix varies with build-tools version ("Signer #1 certificate DN:"
+          # vs "V2 Signer: certificate DN:"), so match the suffix only.
+          SIGNER=$(printf '%s\n' "$RAW" | sed -n 's/^.*certificate DN: //p' | head -1)
           echo "Signed by: ${SIGNER:-<could not read>}"
-          if [ -n "${KEYSTORE_BASE64:-}" ]; then
-            # Fail closed: an unreadable signer must not pass as a good one.
-            if [ -z "$SIGNER" ]; then
-              echo "::error::Could not determine the APK signer."
-              exit 1
-            fi
-            case "$SIGNER" in
-              *"Android Debug"*) echo "::error::Expected the release key but got the debug key."; exit 1 ;;
-            esac
+
+          if [ -z "${KEYSTORE_BASE64:-}" ]; then
+            echo "::warning::No keystore secret set; cannot check against a key."
+            exit 0
           fi
+          if [ -z "$SIGNER" ]; then
+            echo "::error::Could not determine the APK signer."
+            exit 1
+          fi
+          case "$SIGNER" in
+            *"Android Debug"*) echo "::error::APK is debug-signed."; exit 1 ;;
+          esac
+
+          # The real check: the APK must carry the certificate of the keystore we
+          # decoded, not merely some non-debug key.
+          EXPECTED=$(keytool -list -v -keystore release.keystore \
+            -storepass "$KEYSTORE_PASSWORD" -alias "$KEY_ALIAS" \
+            | sed -n 's/^.*SHA256: //p' | tr -d ':' | tr 'A-Z' 'a-z')
+          ACTUAL=$(printf '%s\n' "$RAW" \
+            | sed -n 's/^.*SHA-256 digest: //p' | head -1 | tr 'A-Z' 'a-z')
+          echo "keystore sha256: ${EXPECTED:-<none>}"
+          echo "apk      sha256: ${ACTUAL:-<none>}"
+          if [ -z "$EXPECTED" ] || [ "$EXPECTED" != "$ACTUAL" ]; then
+            echo "::error::APK signature does not match the release keystore."
+            exit 1
+          fi
+          echo "APK is signed with the release keystore."
 
       - name: Resolve tag
         id: meta
