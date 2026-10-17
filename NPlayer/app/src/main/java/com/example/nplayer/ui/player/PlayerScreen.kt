@@ -597,6 +597,16 @@ private fun ControlsOverlay(
                 Text(" " + formatSleepRemaining(it), color = Color.White, style = MaterialTheme.typography.labelSmall)
                 Spacer(Modifier.width(8.dp))
             }
+            // Window-level actions live in the top bar. They change how the picture is
+            // presented rather than what is playing, and the row at the bottom scrolls
+            // horizontally, so keeping them here means rotate and PiP are always one tap
+            // away instead of being scrolled off the end.
+            IconButton(onClick = onRotate) {
+                Icon(Icons.Filled.ScreenRotation, contentDescription = "Rotate", tint = Color.White)
+            }
+            IconButton(onClick = onPictureInPicture) {
+                Icon(Icons.Filled.PictureInPictureAlt, contentDescription = "Picture-in-picture", tint = Color.White)
+            }
             IconButton(onClick = onLock) {
                 Icon(Icons.Filled.Lock, contentDescription = "Lock", tint = Color.White)
             }
@@ -723,8 +733,6 @@ private fun ControlsOverlay(
             OverlayButton(Icons.Filled.Bedtime, "Sleep", onSleep, active = state.sleepRemainingMillis != null)
             OverlayButton(Icons.Filled.Flip, "Mirror", onMirror, active = state.mirrored)
             OverlayButton(Icons.Filled.Brightness6, "Night", onNight, active = state.nightMode)
-            OverlayButton(Icons.Filled.ScreenRotation, "Rotate", onRotate)
-            OverlayButton(Icons.Filled.PictureInPictureAlt, "PiP", onPictureInPicture)
             OverlayButton(Icons.Filled.Equalizer, "Equalizer", onEqualizer, active = equalizerEnabled)
             OverlayButton(
                 Icons.Filled.Subtitles,
@@ -964,7 +972,15 @@ internal fun ChoiceSheet(
         onDismissRequest = onDismiss,
         title = { Text(title) },
         text = {
-            Column(Modifier.fillMaxHeight(0.7f)) {
+            // The list can be taller than the dialog's 70% cap — the speed sheet has
+            // eleven entries and the player is often in landscape, where there is little
+            // height to spare — so it has to scroll. Without this the last entries, and
+            // with them 4x, were clipped and could not be tapped.
+            Column(
+                Modifier
+                    .fillMaxHeight(0.7f)
+                    .verticalScroll(rememberScrollState()),
+            ) {
                 options.forEachIndexed { index, (label, selected) ->
                     TextButton(onClick = { onPick(index) }, modifier = Modifier.fillMaxWidth()) {
                         Text(
