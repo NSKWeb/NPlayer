@@ -70,7 +70,7 @@ through repository secrets (`KEYSTORE_BASE64`, `KEYSTORE_PASSWORD`, `KEY_ALIAS`,
 with the wrong key.
 
 The signature is the app's identity: an APK signed with one key cannot update an install
-of another. Releases up to `v1.2.0` used the debug key, so the first release-signed
+of another. Releases up to `v1.1.7` used the debug key, so the first release-signed
 build needs an uninstall before it will install.
 
 ### Release APK size

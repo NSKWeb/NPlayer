@@ -202,7 +202,7 @@ faster than they were with the shared debug key. The first install of a newly si
 build is still scanned, because the signature is new.
 
 > [!NOTE]
-> **Releases up to `v1.2.0` were signed with the debug key.** The first release-signed
+> **Releases up to `v1.1.7` were signed with the debug key.** The first release-signed
 > build cannot install over one of those — uninstall the old copy first. See
 > [Signing](#signing).
 
@@ -585,7 +585,7 @@ signature on every install.
 > years (a password manager plus an offline copy).
 
 > [!WARNING]
-> **Switching signatures needs a reinstall.** `v1.2.0` and earlier were signed with the
+> **Switching signatures needs a reinstall.** `v1.1.7` and earlier were signed with the
 > debug key. A release-signed build cannot install over a debug-signed one — Android
 > rejects it with *"App not installed"*. Uninstall the old copy first. From the first
 > release-signed build onward, updates work normally.
