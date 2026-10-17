@@ -12,6 +12,7 @@ import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Movie
+import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -23,6 +24,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.core.content.ContextCompat
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.nplayer.data.media.MediaKind
 import com.example.nplayer.ui.components.LoadingBox
 import com.example.nplayer.ui.components.MediaGridCells
 import com.example.nplayer.ui.components.MediaGridHorizontalSpacing
@@ -94,6 +96,28 @@ fun HomeScreen(
             ),
             modifier = Modifier.fillMaxSize(),
         ) {
+            if (state.recentlyPlayed.isNotEmpty()) {
+                item(span = { GridItemSpan(maxLineSpan) }) {
+                    SectionHeader("Recently played", count = state.recentlyPlayed.size)
+                }
+                items(state.recentlyPlayed, key = { "recent-${it.key}" }) { item ->
+                    // The history mixes video and audio, so each card follows its own
+                    // kind the way the Videos and Music sections do. The key is prefixed
+                    // because the same item also appears in its own section below, and
+                    // LazyGrid requires keys to be unique across the grid.
+                    val isVideo = item.kind == MediaKind.VIDEO
+                    PosterCard(
+                        title = item.title,
+                        imageModel = if (isVideo) item.uri else null,
+                        subtitle = item.folder.ifBlank { item.resolution ?: item.sizeLabel },
+                        aspectRatio = if (isVideo) 16f / 9f else 2f / 3f,
+                        placeholderIcon = if (isVideo) Icons.Filled.Movie else Icons.Filled.MusicNote,
+                        badge = item.durationLabel,
+                        onClick = { onOpenDetail(item.key) },
+                    )
+                }
+            }
+
             if (state.videos.isNotEmpty()) {
                 item(span = { GridItemSpan(maxLineSpan) }) {
                     SectionHeader("Videos", count = state.videos.size)

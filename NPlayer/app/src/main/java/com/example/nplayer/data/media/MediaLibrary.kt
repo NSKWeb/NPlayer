@@ -174,6 +174,14 @@ class MediaLibrary @Inject constructor(
 
     /** Whether folders should be listed above files in the folder browser. */
     fun foldersFirst(): Boolean = arrangement.value.foldersFirst
+
+    /**
+     * Recently played items, newest first. Resolved through [findVisible], so an item
+     * that has since been moved into the private folder drops out of the list rather
+     * than leaking back in through the history.
+     */
+    fun recentlyPlayed(keys: List<String>): List<MediaItem> =
+        keys.mapNotNull { findVisible(it) }
 }
 
 /** The live arrangement choices, mirrored from settings so lists re-sort immediately. */
