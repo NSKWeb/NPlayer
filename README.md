@@ -34,6 +34,19 @@ files are there.
 
 </div>
 
+## What's new in 1.3.0
+
+1.3.0 fixes seeking on video, cleans up how captions look, and adds a way back to what
+you were watching.
+
+| Change | What it means |
+| --- | --- |
+| **Seeking on video is fixed** | The ±10 s buttons, the double-tap jump and the horizontal scrub gesture all seek again. Each of them issued a seek before the video's length was known, which the player silently discarded. |
+| **Resume works** | A saved position is applied once the video's length is known instead of being handed over too early, so an item picks up where it left off. |
+| **Captions without a black box** | Subtitles are drawn as white text with a soft outline and no plate behind them, so the picture is not covered. |
+| **Volume and brightness readout** | The vertical gestures now show a live percentage, so the level is visible while you drag. |
+| **Recently played** | Home opens with the items played most recently, newest first, for a one-tap way back. |
+
 ## What's new in 1.2.0
 
 1.2.0 makes the player remember how you like to watch, and puts the library in the order
@@ -50,134 +63,7 @@ you want it.
 | **Orientation and auto-PiP** | Videos can open in a chosen orientation, and leaving the app mid-video can shrink it to a floating window. |
 | **Background play** | Playback can carry on after the player screen closes, controlled by a setting. |
 
-## What's new in 1.1.7
-
-1.1.7 fixes resume and adds lyrics and audio-track selection.
-
-| Change | What it means |
-| --- | --- |
-| **Resume works again** | Playback went through the folder queue, which always started at 0, so a saved position was ignored. Leaving the player also raced the release and could save 0 over the position it was trying to keep. Both are fixed, so an item resumes where you left it. |
-| **Lyrics** | A `.lrc` file next to a track is found and shown on the audio player, with the line playing now highlighted and the pane scrolling to follow it. Nothing is downloaded; it reads the file already on the device. |
-| **Audio track selection** | A file with more than one audio track (a dual-language film, say) gets an **Audio** button in the player controls to choose which one plays. |
-
-## What's new in 1.1.6
-
-1.1.6 makes subtitles readable over the video.
-
-| Change | What it means |
-| --- | --- |
-| **Captions have a solid backing again** | The dark strip behind a caption had gone see-through, so the words sat straight on the picture and were hard to read on busy scenes. It now paints a real background, so the text stands out on any frame. |
-| **Gesture hints match** | The brightness, volume and seek hint used the same see-through backing and now uses the solid one too. |
-
-## What's new in 1.1.5
-
-1.1.5 adds a proper audio player and makes playback flow from one track to the next.
-
-| Change | What it means |
-| --- | --- |
-| **Next and previous buttons** | Video and audio both have ⏮️ and ⏭️ buttons, so you can move through the folder or playlist without going back to the list. When a track finishes, the next one starts on its own. |
-| **Rotate means fullscreen** | While a video plays, rotating the phone now fills the screen. Rotate back to follow the device again, and leaving the player always hands orientation back to the device, so the app no longer stays stuck sideways. |
-| **A separate audio player** | Audio no longer shares the video overlay. It gets a music-player screen — artwork area, title, artist and album, a seek bar, shuffle and repeat, speed, sleep timer, equalizer, and an up-next queue with the playing track marked. |
-| **No video controls on audio** | Resize, mirror, night mode, picture-in-picture, rotate and subtitles are video-only and no longer appear for music. |
-
-## What's new in 1.1.4
-
-1.1.4 fixes three smaller player issues.
-
-| Change | What it means |
-| --- | --- |
-| **The gesture hint clears itself** | The brightness, volume and seek hint that appears while you drag now fades out shortly after the gesture ends, instead of staying on the video until you tap it away. |
-| **Picture-in-picture keeps the video's shape** | The small window now matches the aspect ratio of the video playing, instead of always being a 16:9 box. |
-| **The equalizer binds when audio starts** | The equalizer previously attached at service start, before the player had an audio session, so it could stay unbound and appear to do nothing. It now attaches as soon as the audio session exists. |
-
-## What's new in 1.1.3
-
-1.1.3 fixes fullscreen playback and background playback.
-
-| Change | What it means |
-| --- | --- |
-| **Fullscreen playback** | The status and navigation bars are now hidden while the player is open, and the video fills the whole screen instead of sitting inside the system bar insets. The bars come back when you leave the player. |
-| **No more background playback** | Closing NPlayer from the recents list now stops playback and removes the notification, instead of carrying on in the background until you force stop it. |
-| **The APK is padded to about 7 MB** | The release APK is padded to a round ~7 MB on purpose, by a placeholder asset under `assets/release/`. Code minification and resource shrinking stay on, so nothing functional is stripped; the padding only affects the download size. Regenerate it with `tools/pad_asset.py`. |
-
-## What's new in 1.1.2
-
-1.1.2 simplifies the player controls.
-
-| Change | What it means |
-|---|---|
-| **Simpler player controls** | The +20m, +40m, −20m and −40m quick-jump row has been removed. The ±10 s buttons and the scrubber remain, so the transport row is less crowded. |
-
-## What's new in 1.1.1
-
-1.1.1 fixes thumbnails that looked missing and brings the screenshots on this page in
-line with the Play Store listing.
-
-| Change | What it means |
-|---|---|
-| **Thumbnails show up** | Cards were pulling the frame at the very start of the file, which is black in a lot of encodes, so they looked blank against the dark card. They now take a frame from a little way into the video, and a file that cannot be decoded falls back to the placeholder icon instead of an empty box. |
-| **One set of screenshots** | The Screens section below now shows the same images prepared for the store listing. |
-
-## What's new in 1.1.0
-
-1.1.0 is a design and smoothness pass, plus the long-jump controls that were missing
-from the player.
-
-| Change | What it means |
-|---|---|
-| **Jump 20 / 40 minutes** | The player now has a quick-jump row next to the ±10 s buttons: **+20m, +40m, −20m, −40m**, for skipping through a long film without dragging the scrubber. |
-| **Time remaining** | The seek bar shows the time left (`−1:23:45`) as well as the position, so the length of a file is readable at a glance. |
-| **The app's own look** | A deep near-black palette with a cool blue accent and heavier headings, so your thumbnails are the brightest thing on screen. |
-| **Match my wallpaper** | Dynamic colour (Material You) is now a **setting**, off by default, so the app keeps its own identity unless you ask for the wallpaper palette. |
-| **Better cards** | Rounded poster cards with a duration pill and a soft scrim, section headings with counts, and a filled/outlined bottom bar. |
-| **Stops when it is done** | The player service now ends itself when a file finishes with nothing queued, so the app does not linger in the background after you close it. |
-| **Subtitles, found for you** | Subtitle files sitting next to a video are picked up automatically, embedded text tracks are listed too, and the Subtitle button turns them on and off and lets you choose. |
-
-## What's new in 1.0.2
-
-1.0.2 fixes playback, which did not start at all in 1.0.0 and 1.0.1, and makes the
-shipped build much smaller and smoother.
-
-| Change | What it means |
-|---|---|
-| **Playback actually starts** | Connecting to the media service was blocking the main thread, so the handshake never completed and Play did nothing. It now suspends instead. |
-| **Smaller download** | The published APK is the minified release build: about 3.6 MB instead of 24 MB, with every feature intact. |
-| **Smoother first run** | A baseline profile is installed so the startup and scroll paths are compiled ahead of time. |
-| **Less repeated work** | Screens that read the library more than once now reuse one filtered pass instead of re-scanning the whole list. |
-
-## What's new in 1.0.1
-
-> [!IMPORTANT]
-> **The Jellyfin client is gone.** N Player no longer connects to a server. It plays the
-> video and audio already on your device — no URL, no username, no password, and no
-> network access. If you used an earlier build to stream from a Jellyfin server, that
-> workflow has been removed; this is a standalone local player now.
-
-1.0.1 closes the two known gaps from the 1.0.0 folder work and fixes a navigation and a
-privacy bug found while verifying it:
-
-| Change | What it means |
-|---|---|
-| **Real folders on Android 8–9** | On API 26–28, where `RELATIVE_PATH` does not exist, the containing folder is derived from the legacy `DATA` column, so older devices get a real tree instead of one flat list. |
-| **Android paths tested without a device** | Robolectric drives the real repository against a fake MediaStore on API 29 and 28, and the private-folder filtering is tested against the real stores. |
-| **Player route fix** | The player route now declares its optional `playlist` argument, so opening the player from a playlist matches the destination instead of failing. |
-| **Private items can't leak** | Favourites, playlists, and the playback queue now resolve items through a visibility check, so a hidden file cannot reappear through a stale favourite or playlist entry. |
-
-### The 1.0.0 feature set
-
-| Change | What it means |
-|---|---|
-| **No server, no account** | The sign-in screen is gone. There is nothing to configure. |
-| **Local library** | Videos and audio are read from Android's own MediaStore, newest first. |
-| **Folder browsing** | A Folders tab walks the device tree with a breadcrumb trail, so files outside the top level are reachable. |
-| **Playlists** | Group videos and tracks into named playlists; playing one queues the whole list. |
-| **On-device resume** | Positions are saved every five seconds and restored on Play; nothing is uploaded. |
-| **Favourites** | Star any file and it collects on the Favourites tab. |
-| **Private folder** | Hide any item behind a biometric check; hidden items vanish from every other list. |
-| **Light / dark / system** | A segmented theme control in Settings, remembered across launches. |
-| **Player controls** | A full controls overlay: gestures, 0.25x–4x speed, aspect ratio, A–B repeat, sleep timer, repeat/shuffle, screen lock, mirror, night mode, auto-rotate, and subtitle attach. |
-| **No `INTERNET` permission** | The app cannot make a network request, by design. |
-| **Smaller dependency set** | Room, Retrofit, OkHttp, Gson, WorkManager, and mediarouter were removed. |
+## Features
 
 ### Player controls
 
@@ -187,7 +73,7 @@ below is local playback control, no network involved.
 
 | Control | How it works |
 |---|---|
-| **Gestures** | Double-tap left/right to seek ∓10 s; drag horizontally to scrub; drag vertically on the left half for brightness and the right half for volume. |
+| **Gestures** | Double-tap left/right to seek ∓10 s; drag horizontally to scrub; drag vertically on the left half for brightness and the right half for volume. The vertical gestures show a live percentage while you drag. |
 | **Playback speed** | 0.25x–4x presets, applied to the Media3 player. |
 | **Aspect ratio** | Cycles Fit → Fill → Zoom → Stretch. |
 | **A–B repeat** | First press marks A, second marks B, third clears; playback loops between them. |
@@ -221,6 +107,9 @@ to the network. Formats follow what the Media3 extractors can read — SRT, WebV
 ASS, and TTML. A `.sub` file is deliberately not offered, because it is usually
 MicroDVD, which the extractor cannot parse.
 
+Captions are drawn as white text with a soft outline and no plate behind them, so the
+picture stays visible and the text stays readable over a light frame.
+
 Still open: a subtitle *downloader* (it would need `INTERNET`) and true all-format
 decoding (RMVB/WMV/DivX would need FFmpeg).
 
@@ -231,6 +120,14 @@ playing now highlighted and the pane scrolling to follow it. The sidecar is foun
 same way a subtitle is — `Song.lrc` belongs to `Song.mp3`, and `Song.en.lrc` matches
 too — and it is read from the device, so nothing is downloaded. `LrcParser` and
 `LyricsFiles` are pure and unit-tested.
+
+### Recently played
+
+Home opens with a **Recently played** row holding the items played most recently,
+newest first, so the thing you were watching is one tap away. Replaying an item moves
+it back to the front rather than adding it twice, and the list keeps the last 20. It is
+stored on the device; an item moved into the private folder drops out of the row with
+everything else.
 
 ### Audio tracks
 

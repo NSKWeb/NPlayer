@@ -13,6 +13,7 @@ import com.example.nplayer.data.media.MediaItem
 import com.example.nplayer.data.playlists.PlaylistStore
 import com.example.nplayer.data.prefs.PlaybackSettings
 import com.example.nplayer.data.prefs.PlaybackSettingsStore
+import com.example.nplayer.data.prefs.RecentlyPlayedStore
 import com.example.nplayer.data.prefs.ResumeMode
 import com.example.nplayer.playback.AbRepeat
 import com.example.nplayer.playback.AudioTrack
@@ -24,6 +25,7 @@ import com.example.nplayer.playback.ResizeMode
 import com.example.nplayer.playback.SubtitleTrack
 import com.example.nplayer.playback.buildQueue
 import com.example.nplayer.playback.queueIndexOf
+import com.example.nplayer.playback.seekTarget
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -87,6 +89,7 @@ class PlayerViewModel @Inject constructor(
     private val equalizerController: EqualizerController,
     private val lyricsRepository: LyricsRepository,
     private val playbackSettings: PlaybackSettingsStore,
+    private val recentlyPlayed: RecentlyPlayedStore,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(PlayerUiState())
@@ -101,6 +104,7 @@ class PlayerViewModel @Inject constructor(
     private var subtitleJob: Job? = null
     private var transportJob: Job? = null
     private var lyricsJob: Job? = null
+    private var resumeSeekJob: Job? = null
 
     /** Set when the viewer turns subtitles off, so auto-select does not turn them back on. */
     private var subtitlesUserDisabled = false
@@ -198,6 +202,15 @@ class PlayerViewModel @Inject constructor(
                 it.copy(queue = playingQueue, currentItem = item)
             }
 
+            // The resume position is applied once the timeline is ready rather than
+            // being handed to the controller as a start position: a seek issued before
+            // the container has been read is dropped, which is how "always resume"
+            // silently started from the beginning.
+            if (resume && saved > 0) applySeekWhenReady(saved)
+
+            // Remember that this item was played, so Home can offer a way back to it.
+            recentlyPlayed.record(item.key)
+
             // The service attaches the equalizer once the audio session exists;
             // this just mirrors the controller's state into the UI.
             mirrorEqualizer()
@@ -215,7 +228,29 @@ class PlayerViewModel @Inject constructor(
     /** Seeks to the position saved for the item playing now. */
     fun resumeSavedPosition() {
         val saved = _state.value.savedPositionMillis
-        if (saved > 0) seekTo(saved)
+        if (saved > 0) applySeekWhenReady(saved)
+    }
+
+    /**
+     * Applies [positionMillis] as soon as the player knows the duration.
+     *
+     * Media3 discards a seek issued before the timeline is ready, and the moment an item
+     * opens is exactly that window — `duration` is still unset while the container is
+     * being read. A resume issued then is silently lost, so the position is retried until
+     * it can actually be applied.
+     */
+    private fun applySeekWhenReady(positionMillis: Long) {
+        resumeSeekJob?.cancel()
+        resumeSeekJob = viewModelScope.launch {
+            while (isActive) {
+                val p = player ?: return@launch
+                if (p.duration > 0) {
+                    p.seekTo(positionMillis.coerceIn(0, p.duration))
+                    return@launch
+                }
+                delay(100)
+            }
+        }
     }
 
     /** Re-reads the audio tracks of the current item, e.g. after the queue advanced. */
@@ -385,6 +420,7 @@ class PlayerViewModel @Inject constructor(
         subtitleJob?.cancel()
         transportJob?.cancel()
         lyricsJob?.cancel()
+        resumeSeekJob?.cancel()
     }
 
     // --- Equalizer ---------------------------------------------------------
@@ -430,15 +466,23 @@ class PlayerViewModel @Inject constructor(
         }
     }
 
+    /**
+     * Moves playback by [deltaMillis], clamped to the media bounds. A no-op while the
+     * duration is still unknown: Media3 reports [Player.getDuration] as
+     * [androidx.media3.common.C.TIME_UNSET] until the item has been prepared, and
+     * seeking against that either lands nowhere or on the start of the file.
+     */
     fun seekBy(deltaMillis: Long) {
         val p = player ?: return
-        val duration = if (p.duration > 0) p.duration else Long.MAX_VALUE
-        val target = (p.currentPosition + deltaMillis).coerceIn(0, duration)
-        p.seekTo(target)
+        if (p.duration <= 0) return
+        p.seekTo(seekTarget(p.currentPosition, deltaMillis, p.duration))
     }
 
+    /** Seeks to an absolute [positionMillis], a no-op while the duration is unknown. */
     fun seekTo(positionMillis: Long) {
-        player?.seekTo(positionMillis.coerceAtLeast(0))
+        val p = player ?: return
+        if (p.duration <= 0) return
+        p.seekTo(positionMillis.coerceIn(0, p.duration))
     }
 
     fun setSpeed(speed: Float) {

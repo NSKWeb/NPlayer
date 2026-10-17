@@ -56,7 +56,6 @@ import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material.icons.filled.SkipPrevious
 import androidx.compose.material.icons.filled.Speed
-import com.example.nplayer.playback.formatSpeed
 import androidx.compose.material.icons.filled.Subtitles
 import androidx.compose.material.icons.filled.Timer
 import com.example.nplayer.data.media.MediaKind
@@ -89,6 +88,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.sp
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.style.TextOverflow
@@ -104,6 +108,7 @@ import androidx.media3.ui.PlayerView
 import com.example.nplayer.MainActivity
 import com.example.nplayer.playback.SLEEP_TIMER_PRESETS
 import com.example.nplayer.playback.SPEED_PRESETS
+import com.example.nplayer.playback.dragSeekDelta
 import com.example.nplayer.playback.formatClock
 import com.example.nplayer.playback.formatSleepRemaining
 import com.example.nplayer.playback.formatSpeed
@@ -288,7 +293,13 @@ private fun VideoPlayerScreen(
                     onDragStart = { dx = 0f; dy = 0f },
                     onDragEnd = {
                         if (kotlin.math.abs(dx) > 40f && kotlin.math.abs(dx) > kotlin.math.abs(dy)) {
-                            viewModel.seekBy((dx / size.width * duration).toLong())
+                            // Read the duration from the controller, not the `duration`
+                            // state: this gesture block is keyed only on the lock and the
+                            // gesture setting, so it keeps the duration that was current
+                            // when it was installed. That is 0 for the first moments of a
+                            // video, which made a slide seek move nowhere.
+                            val live = state.controller?.duration ?: 0L
+                            viewModel.seekBy(dragSeekDelta(dx / size.width, live))
                         }
                         dx = 0f; dy = 0f
                     },
@@ -297,16 +308,16 @@ private fun VideoPlayerScreen(
                         dx += drag.x
                         dy += drag.y
                         if (kotlin.math.abs(dx) > kotlin.math.abs(dy)) {
-                            val delta = (dx / size.width * duration).toLong()
+                            val delta = dragSeekDelta(dx / size.width, state.controller?.duration ?: 0L)
                             gestureHint = (if (delta >= 0) "+" else "") + formatClock(delta)
                         } else {
                             val vertical = -dy / size.height
                             if (change.position.x < size.width / 2f) {
                                 viewModel.adjustBrightness(vertical)
-                                gestureHint = "Brightness"
+                                gestureHint = "Brightness ${(viewModel.state.value.brightness * 100).toInt()}%"
                             } else {
                                 viewModel.adjustVolume(vertical)
-                                gestureHint = "Volume"
+                                gestureHint = "Volume ${(viewModel.state.value.volume * 100).toInt()}%"
                             }
                         }
                     },
@@ -381,22 +392,28 @@ private fun VideoPlayerScreen(
         // on the picture. Modifier.background draws into the window's own display list,
         // the same way the night-mode dim below does, and blends correctly.
         state.subtitleText?.let { caption ->
+            // White text with a soft outline, the way Arc Player draws captions. No
+            // plate behind it, so the picture stays visible; the outline is what keeps
+            // the text readable over a light frame.
             Box(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .padding(horizontal = 24.dp)
-                    .padding(bottom = if (controlsVisible) 190.dp else 48.dp)
-                    .background(
-                        color = Color.Black.copy(alpha = 0.75f),
-                        shape = RoundedCornerShape(10.dp),
-                    )
-                    .padding(horizontal = 14.dp, vertical = 8.dp),
+                    .padding(bottom = if (controlsVisible) 190.dp else 48.dp),
             ) {
                 Text(
                     caption,
                     color = Color.White,
                     textAlign = TextAlign.Center,
-                    style = MaterialTheme.typography.titleMedium,
+                    style = MaterialTheme.typography.titleMedium.copy(
+                        fontSize = 22.sp,
+                        fontWeight = FontWeight.SemiBold,
+                        drawStyle = Stroke(
+                            width = 6f,
+                            join = StrokeJoin.Round,
+                            cap = StrokeCap.Round,
+                        ),
+                    ),
                 )
             }
         }
