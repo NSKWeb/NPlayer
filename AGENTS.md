@@ -248,3 +248,26 @@ throwing.
   (`docs/store/screenshots/`), not the older `docs/screen-*.svg` mockups. Regenerate the
   PNGs with `docs/store/generate_screenshots.py` after a UI change and keep the two sets
   from diverging.
+
+## Seeking
+
+Media3 reports `Player.getDuration()` as `C.TIME_UNSET` (a negative value) until the item
+is prepared. Both halves of the video-seek bug came from treating that as a usable
+number:
+
+- `seekBy()` used to return early when the duration was unset, so a press of the ±10 s
+  button made in the seconds after a video opened was **discarded silently** — no seek,
+  no error. It now seeks straight away and lets `seekTarget()` apply the lower bound
+  always and the upper bound only when a length exists.
+- `dragSeekDelta()` scaled the swipe by the duration, which is 0 in that window, so
+  `dx × 0` made the slide cover nothing. It falls back to `DRAG_SEEK_FALLBACK_MILLIS`
+  (90 s) when the duration is missing, so the gesture always moves playback.
+
+Neither symptom was recoverable by the user short of waiting or reopening the file, which
+is why the bug read as "seeking is broken" rather than "seeking is briefly unavailable".
+Guard against `duration <= 0` by *deferring or falling back*, never by dropping the
+action. `Seek.kt` holds the pure maths and `SeekTest.kt` covers both cases.
+
+The resume retry loop (`applySeekWhenReady`) is bounded to 100 × 100 ms. A file whose
+length never arrives leaves the seek unapplied rather than polling for the life of the
+screen.
