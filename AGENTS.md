@@ -160,21 +160,6 @@ blend with the video, so a scrim built from `Surface` renders see-through. The c
 scrim and the gesture hint both hit this; both now use `Modifier.background` on a `Box`,
 matching the night-mode dim. Keep new overlays on that path.
 
-### Release APK size
-
-The release APK is padded to exactly 7,000,000 bytes (7.00 MB) on purpose. A placeholder
-asset, `app/src/main/assets/release/placeholder.bin`, holds random bytes, which barely
-compress, so its length controls the final APK size. Minification and resource shrinking
-stay on, so nothing functional is stripped.
-
-`tools/pad_asset.py` regenerates the asset. To retune after a size drift, add the signed
-difference (built APK size minus 7,000,000) to `PAD_TARGET` and rebuild. The last byte is
-not reachable exactly because DEFLATE compression is not linear, so the APK settles at
-6,999,999 bytes, which is still 7.00 MB.
-
-If you would rather not carry the padding, delete the asset, `tools/pad_asset.py`, and
-this section; the release build is otherwise unchanged.
-
 ### Background behaviour
 
 `PlaybackService` is a foreground service, so it keeps running while audio plays — that
