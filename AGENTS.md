@@ -268,6 +268,17 @@ is why the bug read as "seeking is broken" rather than "seeking is briefly unava
 Guard against `duration <= 0` by *deferring or falling back*, never by dropping the
 action. `Seek.kt` holds the pure maths and `SeekTest.kt` covers both cases.
 
-The resume retry loop (`applySeekWhenReady`) is bounded to 100 × 100 ms. A file whose
-length never arrives leaves the seek unapplied rather than polling for the life of the
-screen.
+The resume retry loop (`applySeekWhenReady`) polls until the duration appears, and must
+stay unbounded: a bounded 100 × 100 ms version shipped in 1.3.1 and gave up after ten
+seconds, which on a large film is *before* the duration arrives, so the resume was
+dropped and the film started from the beginning. The job is cancelled with the view
+model, so an unbounded loop cannot outlive the screen.
+
+A parked resume must also be cancelled by any seek the viewer makes. On a large file the
+duration takes long enough to arrive that a press of ±10 s can land first, and the
+resume then fired afterwards and dragged playback back to the saved position — so the
+press appeared to do nothing. `seekBy`, `seekTo`, `skipToNext` and `skipToPrevious` all
+call `cancelPendingResume()` first. This is why the bug looked like "seeking works on
+short videos but not on films": a short file's duration arrives before a press can land,
+so there is no parked resume left to fight the seek. When adding any new transport
+action, cancel the pending resume there too.

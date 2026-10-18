@@ -34,50 +34,20 @@ files are there.
 
 </div>
 
-## What's new in 1.3.1
+## What's new in 1.3.2
 
-1.3.1 fixes seeking on video. The 1.3.0 attempt did not work: it refused to seek
-while the video's length was unknown, which discarded the press instead of acting
-on it.
-
-| Change | What it means |
-| --- | --- |
-| **±10 s buttons and double-tap seek** | A seek is no longer dropped when the video's length is not known yet. 1.3.0 checked the length first and returned early, so a press made before the video finished opening did nothing at all. |
-| **Horizontal scrub gesture** | The swipe no longer depends on the video's length being known. It was scaled by that length, which is 0 for the first moments after a video opens, so the slide moved playback by nothing. It now falls back to a fixed span in that window. |
-| **Rotate and picture-in-picture on the top bar** | Both moved out of the scrolling row at the bottom, where they were being clipped off the end of the screen. |
-
-## What's new in 1.3.0
-
-1.3.0 restyles captions, adds a way back to what you were watching, and makes the
-full speed range reachable.
+1.3.2 fixes seeking on long videos and films. Earlier attempts missed it because
+the bug only shows on a file whose length takes a while to arrive.
 
 | Change | What it means |
 | --- | --- |
-| **Captions without a black box** | Subtitles are drawn as white text with a soft outline and no plate behind them, so the picture is not covered. |
-| **Volume and brightness readout** | The vertical gestures now show a live percentage, so the level is visible while you drag. |
-| **Recently played** | Home opens with the items played most recently, newest first, for a one-tap way back. |
-| **4× speed reachable** | The speed sheet could not scroll, and 4× was the last of eleven presets, so it sat off the bottom of the screen. The sheet now scrolls. |
+| **Seeking works on films** | Opening a film starts a resume that waits for the film's length to be known. On a large file that wait is long enough to press **+10 s** first, and the waiting resume then fired and dragged playback back to the saved position — so the press looked like it did nothing. A press now cancels the pending resume. |
+| **±10 s buttons and double-tap seek** | No longer dropped when the length is not known yet. |
+| **Horizontal scrub gesture** | No longer scaled by a length of 0 in the moments after a file opens. |
+| **Resume on large files** | The resume retry no longer gives up after ten seconds, which had silently started large films from the beginning. |
 
-> [!IMPORTANT]
-> **1.3.0 did not fix seeking.** Its release notes claimed the ±10 s buttons and the
-> scrub gesture were fixed; they were not, and on video they were made no better than
-> before. 1.3.1 is the release that fixes them. If you are on 1.3.0, please update.
-
-## What's new in 1.2.0
-
-1.2.0 makes the player remember how you like to watch, and puts the library in the order
-you want it.
-
-| Change | What it means |
-| --- | --- |
-| **Playback settings are saved** | Speed, aspect ratio and brightness can now be remembered between files, so a choice made once carries to the next video. |
-| **Resume, your way** | A new setting decides what happens when a file has a saved position: always resume, always start over, or show a **Resume** button and let you choose. |
-| **Clear cache** | A button in Settings frees the thumbnail and temporary caches and reports how much space it reclaimed. |
-| **File arrangement** | Sort files by date, name, size or length, sort folders by name or item count, and choose whether folders sit above files. |
-| **Display readouts** | The overlay can show remaining time, the clock and the battery level, each toggled on its own. |
-| **Subtitle and audio defaults** | Subtitles can be shown by default, and a preferred language can be set for both subtitles and audio tracks. |
-| **Orientation and auto-PiP** | Videos can open in a chosen orientation, and leaving the app mid-video can shrink it to a floating window. |
-| **Background play** | Playback can carry on after the player screen closes, controlled by a setting. |
+Earlier releases are listed under
+[Releases](https://github.com/NSKWeb/NPlayer/releases).
 
 ## Features
 

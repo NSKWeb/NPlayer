@@ -242,9 +242,12 @@ class PlayerViewModel @Inject constructor(
     private fun applySeekWhenReady(positionMillis: Long) {
         resumeSeekJob?.cancel()
         resumeSeekJob = viewModelScope.launch {
-            // Bounded: a file whose length never arrives leaves the seek unapplied
-            // rather than polling for the life of the screen.
-            repeat(100) {
+            // Retries until the duration appears, which for a large file can take far
+            // longer than any fixed budget: a 2 GB MKV may not report one for half a
+            // minute, and a bounded loop silently gave up and started from 0:00. The
+            // job lives with the view model, so it is cancelled with the screen and
+            // cannot outlive it.
+            while (isActive) {
                 val p = player ?: return@launch
                 if (p.duration > 0) {
                     p.seekTo(positionMillis.coerceIn(0, p.duration))
@@ -451,7 +454,10 @@ class PlayerViewModel @Inject constructor(
      */
     fun skipToNext() {
         val p = player ?: return
-        if (p.hasNextMediaItem()) p.seekToNextMediaItem()
+        if (p.hasNextMediaItem()) {
+            cancelPendingResume()
+            p.seekToNextMediaItem()
+        }
     }
 
     /**
@@ -461,6 +467,7 @@ class PlayerViewModel @Inject constructor(
      */
     fun skipToPrevious() {
         val p = player ?: return
+        cancelPendingResume()
         if (p.hasPreviousMediaItem() && p.currentPosition < 3_000) {
             p.seekToPreviousMediaItem()
         } else {
@@ -477,24 +484,43 @@ class PlayerViewModel @Inject constructor(
      * window, so a press did nothing; clamping to an unset duration is worse, because it
      * collapses the target to 0 and jumps to the start. [seekTarget] applies the lower
      * bound always and the upper bound only once a length is known.
+     *
+     * Any pending resume is cancelled first. A resume is parked until the duration
+     * arrives, and on a long file that can be several seconds into playback: without
+     * this the parked resume fired after the press and dragged playback back to the
+     * saved position, so the seek looked like it did nothing. Short files hid it,
+     * because their duration arrives before the first press can land.
      */
     fun seekBy(deltaMillis: Long) {
         val p = player ?: return
+        cancelPendingResume()
         p.seekTo(seekTarget(p.currentPosition, deltaMillis, p.duration))
     }
 
     /**
      * Seeks to an absolute [positionMillis]. Past-the-end positions are clamped only
      * once the duration is known, so a seek is never dropped for want of a length.
+     * Like [seekBy], this supersedes a parked resume.
      */
     fun seekTo(positionMillis: Long) {
         val p = player ?: return
+        cancelPendingResume()
         val target = if (p.duration > 0) {
             positionMillis.coerceIn(0, p.duration)
         } else {
             positionMillis.coerceAtLeast(0)
         }
         p.seekTo(target)
+    }
+
+    /**
+     * Drops a resume that has not been applied yet, because the viewer has since
+     * chosen a position of their own. The saved position stays on disk; only the
+     * deferred seek is abandoned.
+     */
+    private fun cancelPendingResume() {
+        resumeSeekJob?.cancel()
+        resumeSeekJob = null
     }
 
     fun setSpeed(speed: Float) {
