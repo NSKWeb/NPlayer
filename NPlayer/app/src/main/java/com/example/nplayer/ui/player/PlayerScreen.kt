@@ -293,11 +293,10 @@ private fun VideoPlayerScreen(
                     onDragStart = { dx = 0f; dy = 0f },
                     onDragEnd = {
                         if (kotlin.math.abs(dx) > 40f && kotlin.math.abs(dx) > kotlin.math.abs(dy)) {
-                            // Read the duration from the controller, not the `duration`
-                            // state: this gesture block is keyed only on the lock and the
-                            // gesture setting, so it keeps the duration that was current
-                            // when it was installed. That is 0 for the first moments of a
-                            // video, which made a slide seek move nowhere.
+                            // Read the duration from the controller at the moment of the
+                            // swipe: this block is keyed only on the lock and the gesture
+                            // setting, so it would otherwise keep the duration that was
+                            // current when it was installed.
                             val live = state.controller?.duration ?: 0L
                             viewModel.seekBy(dragSeekDelta(dx / size.width, live))
                         }

@@ -242,7 +242,9 @@ class PlayerViewModel @Inject constructor(
     private fun applySeekWhenReady(positionMillis: Long) {
         resumeSeekJob?.cancel()
         resumeSeekJob = viewModelScope.launch {
-            while (isActive) {
+            // Bounded: a file whose length never arrives leaves the seek unapplied
+            // rather than polling for the life of the screen.
+            repeat(100) {
                 val p = player ?: return@launch
                 if (p.duration > 0) {
                     p.seekTo(positionMillis.coerceIn(0, p.duration))
@@ -467,22 +469,32 @@ class PlayerViewModel @Inject constructor(
     }
 
     /**
-     * Moves playback by [deltaMillis], clamped to the media bounds. A no-op while the
-     * duration is still unknown: Media3 reports [Player.getDuration] as
-     * [androidx.media3.common.C.TIME_UNSET] until the item has been prepared, and
-     * seeking against that either lands nowhere or on the start of the file.
+     * Moves playback by [deltaMillis].
+     *
+     * The seek is issued straight away and never depends on the duration being known.
+     * Media3 reports the duration as [androidx.media3.common.C.TIME_UNSET] until the item
+     * is prepared — and for some containers, not at all. 1.3.0 refused to seek in that
+     * window, so a press did nothing; clamping to an unset duration is worse, because it
+     * collapses the target to 0 and jumps to the start. [seekTarget] applies the lower
+     * bound always and the upper bound only once a length is known.
      */
     fun seekBy(deltaMillis: Long) {
         val p = player ?: return
-        if (p.duration <= 0) return
         p.seekTo(seekTarget(p.currentPosition, deltaMillis, p.duration))
     }
 
-    /** Seeks to an absolute [positionMillis], a no-op while the duration is unknown. */
+    /**
+     * Seeks to an absolute [positionMillis]. Past-the-end positions are clamped only
+     * once the duration is known, so a seek is never dropped for want of a length.
+     */
     fun seekTo(positionMillis: Long) {
         val p = player ?: return
-        if (p.duration <= 0) return
-        p.seekTo(positionMillis.coerceIn(0, p.duration))
+        val target = if (p.duration > 0) {
+            positionMillis.coerceIn(0, p.duration)
+        } else {
+            positionMillis.coerceAtLeast(0)
+        }
+        p.seekTo(target)
     }
 
     fun setSpeed(speed: Float) {

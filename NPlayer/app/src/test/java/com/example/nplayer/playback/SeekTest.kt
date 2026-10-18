@@ -1,6 +1,7 @@
 package com.example.nplayer.playback
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /** The clamping and drag maths behind the ±10 s buttons and the slide-to-seek gesture. */
@@ -56,11 +57,27 @@ class SeekTest {
     }
 
     /**
-     * The other half of the slide-to-seek bug: the gesture read a duration captured at
-     * first composition, which is 0, so the drag covered nothing.
+     * The other half of the slide-to-seek bug: scaling by an unknown duration gave a
+     * delta of 0, so the drag covered nothing. The swipe now falls back to a fixed span.
      */
     @Test
-    fun `unknown duration makes a drag cover nothing`() {
-        assertEquals(0L, dragSeekDelta(fraction = 0.5f, durationMillis = 0L))
+    fun `unknown duration still moves the swipe by the fallback span`() {
+        assertEquals(
+            (DRAG_SEEK_FALLBACK_MILLIS / 2),
+            dragSeekDelta(fraction = 0.5f, durationMillis = 0L),
+        )
+    }
+
+    @Test
+    fun `a full swipe covers the fallback span when the duration is unknown`() {
+        assertEquals(
+            DRAG_SEEK_FALLBACK_MILLIS,
+            dragSeekDelta(fraction = 1f, durationMillis = 0L),
+        )
+    }
+
+    @Test
+    fun `a swipe never yields zero even with an unknown duration`() {
+        assertTrue(dragSeekDelta(fraction = 0.05f, durationMillis = 0L) > 0)
     }
 }
